@@ -5,20 +5,19 @@
   const TARGET_DEVICE = "Ascetik Ash";
 
   const MFR = 0x7D;
-  const SYSEX_DEVICE_INFO = 0x01;
-  const SYSEX_LOG = 0x02;
-  const SYSEX_STATUS = 0x03;
-  const SYSEX_PARAM_VELOCITY = 0x0A;
-  const SYSEX_PARAM_CHANNEL = 0x0B;
-  const SYSEX_PARAM_THRU = 0x0C;
-  const SYSEX_PARAM_DELAY_FEEDBACK = 0x0D;
-  const SYSEX_PARAM_DELAY_MIX = 0x0E;
-  const SYSEX_PARAM_FILTER_RESONANCE = 0x0F;
-  const SYSEX_PARAM_CC_MAPPING = 0x10;
-  const SYSEX_PARAM_SAVE_SETTINGS = 0x11;
-  const SYSEX_PARAM_DUMP_SETTINGS = 0x12;
-  const SYSEX_PARAM_DUMP_WAVETABLE = 0x13;
-  const SYSEX_PARAM_DEVICE_MODE = 0x14;
+  const SYSEX_DEVICE_INFO = 1;
+  const SYSEX_LOG = 2;
+  const SYSEX_STATUS = 3;
+  const SYSEX_PARAM_SAVE_SETTINGS = 4;
+  const SYSEX_PARAM_DUMP_SETTINGS = 5;
+  const SYSEX_PARAM_DUMP_WAVETABLE = 6;
+  const SYSEX_PARAM_FILTER_RESONANCE = 20;
+  const SYSEX_PARAM_VELOCITY = 21;
+  const SYSEX_PARAM_CHANNEL = 22;
+  const SYSEX_PARAM_THRU = 23;
+  const SYSEX_PARAM_DEVICE_MODE = 24;
+  const SYSEX_PARAM_BRIGHTNESS = 25;
+  const SYSEX_PARAM_CC_MAPPING = 100;
 
   let midi = null;
   let input = null;
@@ -79,7 +78,8 @@
     if (payload[0] !== MFR) return null;
     if (payload.length !== 4) return null;
     const param = payload[1];
-    if (param < SYSEX_PARAM_VELOCITY || param > SYSEX_PARAM_DEVICE_MODE) return null;
+    const isSetting = param >= SYSEX_PARAM_FILTER_RESONANCE && param <= SYSEX_PARAM_BRIGHTNESS;
+    if (!isSetting && param !== SYSEX_PARAM_CC_MAPPING) return null;
     return { param, a: payload[2], b: payload[3] };
   }
 

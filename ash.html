@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Ascetik Ash configuration utility">
+    <meta name="theme-color" content="#000000">
+    <title>Ascetik Utility</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sixtyfour&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <main>
+        <section>
+            <img class="logo" src="ascetik.png" alt="Ascetik Monitor" />
+        </section>
+
+        <section id="monitorSection">
+            <div id="monitorLog" class="monitor-log"></div>
+        </section>
+
+        <section class="device-row" id="deviceSection">
+            <div class="device-controls">
+                <div class="device-row-top">
+                    <select id="inputs">
+                        <option value="" disabled selected>No devices</option>
+                    </select>
+                    <button id="storePreset">Store</button>
+                </div>
+            </div>
+        </section>
+
+
+        <section class="wavetable-section" id="wavetableSection">
+            <div class="preset-row">
+                <span id="wavetableFilename" class="wavetable-filename">No file loaded</span>
+            </div>
+            <div class="preset-row">
+                <canvas id="wavetablePreview" class="wavetable-preview" aria-label="Wavetable preview"></canvas>
+            </div>
+            <div class="preset-row">
+                <button id="uploadWavetable">Upload</button>
+                <label class="select-row">
+                    <select id="wavetableTarget">
+                        <option value="0" selected>TABLE A</option>
+                        <option value="1">TABLE B</option>
+                        <option value="2">TABLE C</option>
+                    </select>
+                </label>
+                <button id="sendWavetable" disabled>Send</button>
+            </div>
+        </section>
+
+        <section class="settings-layout">
+            <div id="settingsSection">
+                <div class="slider-wrap">
+                    <div class="slider-meta">
+                        <span class="slider-name">Filter Resonance:</span>
+                        <span class="slider-value" id="filterResonanceVal">64</span>
+                    </div>
+                    <input id="filterResonance" type="range" min="0" max="127" value="64" data-cc="20" />
+                </div>
+
+                <div class="slider-wrap">
+                    <div class="slider-meta">
+                        <span class="slider-name">Velocity:</span>
+                        <span class="slider-value" id="velVal">64</span>
+                    </div>
+                    <input id="vel" type="range" min="1" max="127" value="64" data-cc="21" />
+                </div>
+
+                <div class="slider-wrap">
+                    <div class="slider-meta">
+                        <span class="slider-name">MIDI Channel:</span>
+                        <span class="slider-value" id="midiChannelVal">1</span>
+                    </div>
+                    <input id="midiChannel" type="range" min="1" max="16" value="1" data-cc="22" />
+                </div>
+
+                <div class="slider-wrap">
+                    <label class="checkbox-row">
+                        <span>MIDI Thru</span>
+                        <input id="midiThru" type="checkbox" data-cc="23" />
+                    </label>
+                </div>
+
+                <div class="slider-wrap">
+                    <label class="select-row select-row-stack">
+                        <span>Default Mode</span>
+                        <select id="deviceMode" data-cc="24">
+                            <option value="0">Synth</option>
+                            <option value="1">MIDI Keyboard</option>
+                            <option value="2">MIDI Controller</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="slider-wrap">
+                    <div class="slider-meta">
+                        <span class="slider-name">Brightness:</span>
+                        <span class="slider-value" id="brightnessVal">64</span>
+                    </div>
+                    <input id="brightness" type="range" min="0" max="127" value="64" data-cc="25" />
+                </div>
+
+                <div class="cc-grid-wrap">
+                    <span class="cc-grid-title">CC Mapping</span>
+                    <div class="cc-grid">
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="0"
+                            data-cc="100" style="grid-row: 1; grid-column: 2;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="1"
+                            data-cc="101" style="grid-row: 1; grid-column: 6;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="2"
+                            data-cc="102" style="grid-row: 2; grid-column: 1;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="3"
+                            data-cc="103" style="grid-row: 2; grid-column: 7;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="4"
+                            data-cc="104" style="grid-row: 3; grid-column: 2;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="5"
+                            data-cc="105" style="grid-row: 3; grid-column: 4;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="6"
+                            data-cc="106" style="grid-row: 3; grid-column: 6;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="7"
+                            data-cc="107" style="grid-row: 4; grid-column: 1;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="8"
+                            data-cc="108" style="grid-row: 4; grid-column: 7;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="9"
+                            data-cc="109" style="grid-row: 5; grid-column: 2;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="10"
+                            data-cc="110" style="grid-row: 5; grid-column: 3;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="11"
+                            data-cc="111" style="grid-row: 5; grid-column: 5;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="12"
+                            data-cc="112" style="grid-row: 5; grid-column: 6;" />
+                    </div>
+                </div>
+                <section class="preset-section">
+                    <div class="preset-row">
+                        <input id="presetName" class="preset-name" type="text" maxlength="40"
+                            placeholder="preset name" />
+                        <button id="savePreset">Save</button>
+                        <button id="loadPreset">Load</button>
+                    </div>
+                </section>
+            </div>
+        </section>
+        <section class="monitor-log">
+            <p>---</p>
+            <p>Since 2015<span class="cursor" aria-hidden="true"></span></p>
+        </section>
+    </main>
+
+    <script src="js/midi.js"></script>
+    <script src="js/ui.js"></script>
+</body>
+
+</html>

@@ -11,6 +11,8 @@
   const chanEl = document.getElementById("midiChannel");
   const chanValEl = document.getElementById("midiChannelVal");
   const thruEl = document.getElementById("midiThru");
+  const brightnessEl = document.getElementById("brightness");
+  const brightnessValEl = document.getElementById("brightnessVal");
   const filterResEl = document.getElementById("filterResonance");
   const filterResValEl = document.getElementById("filterResonanceVal");
   const deviceModeEl = document.getElementById("deviceMode");
@@ -21,24 +23,40 @@
   const savePresetBtn = document.getElementById("savePreset");
   const loadPresetBtn = document.getElementById("loadPreset");
   const uploadWavetableBtn = document.getElementById("uploadWavetable");
-  const playWavetableBtn = document.getElementById("playWavetable");
   const sendWavetableBtn = document.getElementById("sendWavetable");
   const wavetableTargetEl = document.getElementById("wavetableTarget");
   const wavetablePreviewEl = document.getElementById("wavetablePreview");
   const wavetableFilenameEl = document.getElementById("wavetableFilename");
-  const wavetableVolumeEl = document.getElementById("wavetableVolume");
   const presetNameEl = document.getElementById("presetName");
   const logHistory = [];
   let lastLoadedInputId = null;
   let awaitingSettingsDump = false;
   let pendingWavetable = null;
-  let wavetableAudioCtx = null;
-  let wavetableSource = null;
-  let wavetableGain = null;
+  const SYSEX_PARAM_FILTER_RESONANCE = 0x14;
+  const SYSEX_PARAM_VELOCITY = 0x15;
+  const SYSEX_PARAM_CHANNEL = 0x16;
+  const SYSEX_PARAM_THRU = 0x17;
+  const SYSEX_PARAM_DEVICE_MODE = 0x18;
+  const SYSEX_PARAM_BRIGHTNESS = 0x19;
+  const SYSEX_PARAM_CC_MAPPING = 0x64;
 
   function clamp(value, min, max) {
     if (!Number.isFinite(value)) return min;
     return Math.max(min, Math.min(max, value));
+  }
+
+  function updateRangeFill(inputEl) {
+    if (!inputEl) return;
+    const min = Number(inputEl.min || 0);
+    const max = Number(inputEl.max || 100);
+    const value = clamp(Number(inputEl.value), min, max);
+    const range = max - min;
+    const percent = range > 0 ? ((value - min) / range) * 100 : 0;
+    inputEl.style.setProperty("--range-fill", `${percent}%`);
+  }
+
+  function updateAllRangeFills() {
+    document.querySelectorAll('input[type="range"]').forEach(updateRangeFill);
   }
 
   function renderMonitorLog() {
@@ -156,35 +174,45 @@
         awaitingSettingsDump = false;
       }
       switch (param) {
-      case 0x0A: {
+      case SYSEX_PARAM_VELOCITY: {
         const value = ((valueA & 0x7F) << 7) | (valueB & 0x7F);
         velEl.value = value;
         velValEl.textContent = value;
+        updateRangeFill(velEl);
         break;
       }
-      case 0x0B: {
+      case SYSEX_PARAM_CHANNEL: {
         const value = ((valueA & 0x7F) << 7) | (valueB & 0x7F);
         chanEl.value = value;
         chanValEl.textContent = value;
+        updateRangeFill(chanEl);
         break;
       }
-      case 0x0C: {
+      case SYSEX_PARAM_THRU: {
         const value = ((valueA & 0x7F) << 7) | (valueB & 0x7F);
         thruEl.checked = value !== 0;
         break;
       }
-      case 0x0F: {
+      case SYSEX_PARAM_FILTER_RESONANCE: {
         const value = ((valueA & 0x7F) << 7) | (valueB & 0x7F);
         filterResEl.value = value;
         filterResValEl.textContent = value;
+        updateRangeFill(filterResEl);
         break;
       }
-      case 0x14: {
+      case SYSEX_PARAM_DEVICE_MODE: {
         const value = ((valueA & 0x7F) << 7) | (valueB & 0x7F);
         if (deviceModeEl) deviceModeEl.value = String(Math.max(0, Math.min(2, value)));
         break;
       }
-      case 0x10: {
+      case SYSEX_PARAM_BRIGHTNESS: {
+        const value = ((valueA & 0x7F) << 7) | (valueB & 0x7F);
+        if (brightnessEl) brightnessEl.value = value;
+        if (brightnessValEl) brightnessValEl.textContent = value;
+        updateRangeFill(brightnessEl);
+        break;
+      }
+      case SYSEX_PARAM_CC_MAPPING: {
         const index = valueA;
         const ccValue = valueB;
         if (index < 0 || index > 12) return;
@@ -223,6 +251,11 @@
     if (!/^\d+$/.test(raw)) return;
     const entered = Number(raw);
     if (!Number.isInteger(entered) || entered < 0 || entered > 127) return;
+    const cc = Number(field.dataset.cc);
+    if (Number.isInteger(cc)) {
+      MidiControl.sendCC(cc, entered, currentChannel());
+      return;
+    }
     const index = Number(field.dataset.ccIndex);
     if (!Number.isInteger(index) || index < 0 || index > 12) return;
     MidiControl.sendCCMap(index, entered);
@@ -241,6 +274,20 @@
     MidiControl.sendCC(cc, value, currentChannel());
   }
 
+  function sendToggleCC(inputEl, onValue = 127, offValue = 0) {
+    const cc = Number(inputEl.dataset.cc);
+    if (!Number.isInteger(cc)) return;
+    const value = inputEl.checked ? onValue : offValue;
+    MidiControl.sendCC(cc, value, currentChannel());
+  }
+
+  function sendSelectCC(selectEl) {
+    const cc = Number(selectEl.dataset.cc);
+    if (!Number.isInteger(cc)) return;
+    const value = clamp(Number(selectEl.value), 0, 127);
+    MidiControl.sendCC(cc, value, currentChannel());
+  }
+
   function collectPreset() {
     const ccMap = Array.from(ccFields).map(field => {
       const raw = field.value.trim();
@@ -254,6 +301,8 @@
       midiChannel: Number(chanEl.value),
       midiThru: thruEl.checked,
       filterResonance: Number(filterResEl.value),
+      brightness: brightnessEl ? Number(brightnessEl.value) : 64,
+      deviceMode: deviceModeEl ? Number(deviceModeEl.value) : 0,
       ccMap,
     };
   }
@@ -263,22 +312,37 @@
     if (Number.isInteger(preset.velocity)) {
       velEl.value = preset.velocity;
       velValEl.textContent = preset.velocity;
-      MidiControl.sendVelocity(preset.velocity);
+      updateRangeFill(velEl);
+      sendSliderCC(velEl);
     }
     if (Number.isInteger(preset.midiChannel)) {
       chanEl.value = preset.midiChannel;
       chanValEl.textContent = preset.midiChannel;
-      MidiControl.sendMIDIChannel(preset.midiChannel);
+      updateRangeFill(chanEl);
+      sendSliderCC(chanEl);
     }
     if (typeof preset.midiThru === "boolean") {
       thruEl.checked = preset.midiThru;
-      MidiControl.sendMIDIThru(preset.midiThru);
+      sendToggleCC(thruEl);
     }
     if (Number.isInteger(preset.filterResonance)) {
       const value = clamp(preset.filterResonance, 0, 127);
       filterResEl.value = value;
       filterResValEl.textContent = value;
+      updateRangeFill(filterResEl);
       sendSliderCC(filterResEl);
+    }
+    if (brightnessEl && Number.isInteger(preset.brightness)) {
+      const value = clamp(preset.brightness, 0, 127);
+      brightnessEl.value = value;
+      if (brightnessValEl) brightnessValEl.textContent = value;
+      updateRangeFill(brightnessEl);
+      sendSliderCC(brightnessEl);
+    }
+    if (deviceModeEl && Number.isInteger(preset.deviceMode)) {
+      const value = clamp(preset.deviceMode, 0, 2);
+      deviceModeEl.value = String(value);
+      sendSelectCC(deviceModeEl);
     }
     if (Array.isArray(preset.ccMap)) {
       preset.ccMap.slice(0, 13).forEach((value, index) => {
@@ -286,6 +350,13 @@
         const clamped = Math.max(0, Math.min(127, value));
         const field = document.querySelector(`.cc-field[data-cc-index="${index}"]`);
         if (field) field.value = String(clamped);
+        if (field && field.dataset.cc) {
+          const cc = Number(field.dataset.cc);
+          if (Number.isInteger(cc)) {
+            MidiControl.sendCC(cc, clamped, currentChannel());
+            return;
+          }
+        }
         MidiControl.sendCCMap(index, clamped);
       });
     }
@@ -451,7 +522,6 @@
         const normalized = normalizeSamples(resampled);
         const int8 = toInt8Array(normalized);
         pendingWavetable = int8;
-        if (playWavetableBtn) playWavetableBtn.disabled = false;
         if (sendWavetableBtn) sendWavetableBtn.disabled = false;
         drawWavetable(int8);
         addLocalStatus("Wavetable converted");
@@ -464,68 +534,6 @@
       }
     };
     input.click();
-  }
-
-  function ensureAudioContext() {
-    if (wavetableAudioCtx && wavetableAudioCtx.state !== "closed") {
-      return wavetableAudioCtx;
-    }
-    wavetableAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    return wavetableAudioCtx;
-  }
-
-  function stopWavetablePlayback() {
-    if (wavetableSource) {
-      wavetableSource.stop();
-      wavetableSource.disconnect();
-      wavetableSource = null;
-    }
-    if (wavetableGain) {
-      wavetableGain.disconnect();
-      wavetableGain = null;
-    }
-    if (playWavetableBtn) playWavetableBtn.textContent = "Play";
-  }
-
-  function getWavetableGainValue() {
-    if (!wavetableVolumeEl) return 0.5;
-    const value = Number(wavetableVolumeEl.value);
-    if (!Number.isFinite(value)) return 0.5;
-    return Math.max(0, Math.min(1, value / 127));
-  }
-
-  function playWavetableLoop() {
-    if (!pendingWavetable) return;
-    if (wavetableSource) {
-      stopWavetablePlayback();
-      return;
-    }
-    const ctx = ensureAudioContext();
-    const buffer = ctx.createBuffer(1, pendingWavetable.length, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < pendingWavetable.length; i += 1) {
-      data[i] = pendingWavetable[i] / 128;
-    }
-    const targetHz = 131;
-    const baseHz = ctx.sampleRate / pendingWavetable.length;
-    wavetableSource = ctx.createBufferSource();
-    wavetableSource.buffer = buffer;
-    wavetableSource.loop = true;
-    wavetableSource.playbackRate.value = targetHz / baseHz;
-    wavetableGain = ctx.createGain();
-    wavetableGain.gain.value = getWavetableGainValue();
-    wavetableSource.connect(wavetableGain);
-    wavetableGain.connect(ctx.destination);
-    wavetableSource.onended = () => {
-      wavetableSource = null;
-      if (wavetableGain) {
-        wavetableGain.disconnect();
-        wavetableGain = null;
-      }
-      if (playWavetableBtn) playWavetableBtn.textContent = "Play";
-    };
-    wavetableSource.start();
-    if (playWavetableBtn) playWavetableBtn.textContent = "Stop";
   }
 
   async function sendWavetableToDevice() {
@@ -559,26 +567,36 @@
 
   velEl.oninput = () => {
     velValEl.textContent = velEl.value;
-    MidiControl.sendVelocity(Number(velEl.value));
+    updateRangeFill(velEl);
+    sendSliderCC(velEl);
   };
 
   chanEl.oninput = () => {
     chanValEl.textContent = chanEl.value;
-    MidiControl.sendMIDIChannel(Number(chanEl.value));
+    updateRangeFill(chanEl);
+    sendSliderCC(chanEl);
   };
 
   thruEl.onchange = () => {
-    MidiControl.sendMIDIThru(thruEl.checked);
+    sendToggleCC(thruEl);
   };
 
   filterResEl.oninput = () => {
     filterResValEl.textContent = filterResEl.value;
+    updateRangeFill(filterResEl);
     sendSliderCC(filterResEl);
   };
 
   if (deviceModeEl) {
     deviceModeEl.onchange = () => {
-      MidiControl.sendDeviceMode(Number(deviceModeEl.value));
+      sendSelectCC(deviceModeEl);
+    };
+  }
+  if (brightnessEl) {
+    brightnessEl.oninput = () => {
+      if (brightnessValEl) brightnessValEl.textContent = brightnessEl.value;
+      updateRangeFill(brightnessEl);
+      sendSliderCC(brightnessEl);
     };
   }
 
@@ -614,23 +632,9 @@
       sendWavetableToDevice();
     };
   }
-  if (playWavetableBtn) {
-    playWavetableBtn.onmousedown = playWavetableLoop;
-    playWavetableBtn.ontouchstart = (e) => {
-      e.preventDefault();
-      playWavetableLoop();
-    };
-  }
-  if (wavetableVolumeEl) {
-    wavetableVolumeEl.oninput = () => {
-      if (wavetableGain) {
-        wavetableGain.gain.value = getWavetableGainValue();
-      }
-    };
-  }
-
   renderMonitorLog();
   clearWavetablePreview();
+  updateAllRangeFills();
   storeBtn.disabled = true;
   savePresetBtn.disabled = true;
   loadPresetBtn.disabled = true;
