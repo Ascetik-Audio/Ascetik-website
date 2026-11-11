@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Ascetik Ash MIDI configuration utility">
+    <meta name="theme-color" content="#000000">
+    <title>Ascetik — Ash MIDI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sixtyfour&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <main>
+        <header class="device-header">
+            <img class="logo" src="./img/ascetik.png" alt="Ascetik Monitor">
+        <div id="monitorSection">
+            <div id="monitorLog" class="monitor-log" role="status" aria-live="polite">Looking for Ascetik Ash MIDI…</div>
+        </div>
+        </header>
+        <div class="settings-layout">
+            <div id="settingsSection">
+                <p class="device-intro">===<br>Ascetik Ash MIDI is a MIDI controller and stereo USB audio interface. Map your controls, manage presets, and configure your device here.<br><br>Browser support: use desktop Chrome or Edge and allow MIDI access, including SysEx.<br><br>Storing to EEPROM during audio playback may cause a brief noise.<br>===</p>
+<div class="firmware-update"></div>
+                <section class="editor-section" aria-labelledby="deviceSettingsTitle">
+                <h2 id="deviceSettingsTitle">Device Settings</h2>
+                <div class="slider-wrap velocity-control">
+                    <div class="slider-meta"><label class="slider-name" for="vel">Velocity:</label><output class="slider-value" id="velVal" for="vel">127</output></div>
+                    <input id="vel" type="range" min="27" max="127" value="127">
+                </div>
+                <div class="slider-wrap">
+                    <div class="slider-meta"><label class="slider-name" for="midiChannel">MIDI Channel:</label><output class="slider-value" id="midiChannelVal" for="midiChannel">1</output></div>
+                    <input id="midiChannel" type="range" min="1" max="16" value="1">
+                </div>
+                <div class="slider-wrap">
+                    <label class="select-row select-row-stack"><span>Device Mode</span><select id="deviceMode"><option value="0">Keyboard</option><option value="1">MIDI Controller</option></select></label>
+                </div>
+                <div class="slider-wrap">
+                    <div class="slider-meta"><label class="slider-name" for="brightness">Brightness:</label><output class="slider-value" id="brightnessVal" for="brightness">32</output></div>
+                    <input id="brightness" type="range" min="0" max="127" value="32">
+                </div>
+                </section>
+                <section class="editor-section cc-grid-wrap" aria-labelledby="midiMappingTitle">
+                    <h2 id="midiMappingTitle" class="cc-grid-title">MIDI Mapping</h2>
+                    <h3 class="cc-group-title">Potentiometers CC</h3>
+                    <div class="cc-grid">
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="0" style="grid-row: 1; grid-column: 2;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="1" style="grid-row: 1; grid-column: 6;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="2" style="grid-row: 2; grid-column: 1;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="3" style="grid-row: 2; grid-column: 7;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="4" style="grid-row: 3; grid-column: 2;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="5" style="grid-row: 3; grid-column: 4;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="6" style="grid-row: 3; grid-column: 6;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="7" style="grid-row: 4; grid-column: 1;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="8" style="grid-row: 4; grid-column: 7;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="9" style="grid-row: 5; grid-column: 2;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="10" style="grid-row: 5; grid-column: 3;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="11" style="grid-row: 5; grid-column: 5;" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="12" style="grid-row: 5; grid-column: 6;" />
+                    </div>
+                    <h3 class="cc-group-title">Buttons CC</h3>
+                    <div class="cc-buttons">
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="13" aria-label="Button 1 CC number" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="14" aria-label="Button 2 CC number" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="15" aria-label="Button 3 CC number" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="16" aria-label="Button 4 CC number" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="17" aria-label="Button 5 CC number" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="18" aria-label="Button 6 CC number" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="19" aria-label="Button 7 CC number" />
+                        <input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="20" aria-label="Button 8 CC number" />
+                    </div>
+                    <div class="leaf-cc"><h3 class="cc-group-title">Touch pad CC</h3><input class="cc-field" type="text" inputmode="numeric" maxlength="3" data-cc-index="21" aria-label="Leaf touch CC number" /></div>
+                </section>
+
+                <section class="editor-section preset-section" aria-labelledby="presetsTitle">
+                    <h2 id="presetsTitle">Presets</h2>
+                    <div class="preset-row">
+                        <input id="presetName" class="preset-name" type="text" maxlength="64" placeholder="preset name" aria-label="Preset name">
+                        <button id="savePreset">SAVE</button>
+                        <button id="loadPreset">LOAD PRESET</button>
+                        <button id="storePreset" disabled>Store to EEPROM</button>
+                    </div>
+                    <input id="presetFile" type="file" accept=".json,application/json" hidden>
+                </section>
+            </div>
+        </div>
+        <section class="monitor-log"><p>-----</p><p>Ascetik. 2015 - 2026<span class="cursor" aria-hidden="true"></span></p></section>
+    </main>
+    <script src="js/protocol.js"></script>
+    <script src="js/midi.js"></script>
+    <script src="js/main.js"></script>
+<script src="firmware-info.js"></script><script src="./picoboot.js"></script><script src="./firmware.js"></script></body>
+</html>

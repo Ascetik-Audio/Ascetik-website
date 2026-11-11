@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Ascetik Ash Wave settings and wavetable utility"><meta name="theme-color" content="#000000">
+<title>Ascetik — Ash Wave</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Sixtyfour&display=swap" rel="stylesheet"><link rel="stylesheet" href="./styles.css">
+</head><body><main>
+<header class="device-header"><img class="logo" src="./img/ascetik.png" alt="Ascetik"><div id="monitorSection"><div id="monitorLog" class="monitor-log" role="status" aria-live="polite">Looking for Ascetik Ash Wave…</div></div></header>
+<div class="settings-layout"><div id="settingsSection">
+<p class="device-intro">===<br>Ash Wave · wavetable synthesizer and stereo USB audio interface.<br><br>Choose Local mix to blend Ash with USB audio, or USB effects loop to process Ash on a connected device and hear the return. Upload single-cycle WAVs to tables A and B, automatically converted to 1,024 samples at 16-bit.<br><br>Use desktop Chrome or Edge and allow MIDI access, including SysEx.<br>===</p>
+<div class="firmware-update"></div>
+<section class="editor-section" aria-labelledby="settingsTitle"><h2 id="settingsTitle">Device Settings</h2>
+<fieldset id="deviceControls">
+<div class="slider-wrap"><label class="select-row select-row-stack" for="audioMode"><span>USB Audio Mode</span><select id="audioMode"><option value="0">Local mix</option><option value="1">Effects loop</option></select></label></div>
+<div class="slider-wrap"><div class="slider-meta"><label class="slider-name" for="balance">Ash / USB Host Balance:</label><output class="slider-value" id="balanceVal" for="balance">64</output></div><input id="balance" type="range" min="0" max="127" value="64"></div>
+<div class="slider-wrap"><div class="slider-meta"><label class="slider-name" for="brightness">LED Brightness:</label><output class="slider-value" id="brightnessVal" for="brightness">32</output></div><input id="brightness" type="range" min="0" max="127" value="32"></div>
+</fieldset></section>
+<section class="editor-section wavetable-section" aria-labelledby="tableTitle"><h2 id="tableTitle">Wavetables</h2>
+<div class="table-block"><h3>Table A</h3><canvas class="wavetable-preview" id="previewA" width="1000" height="240" aria-label="Table A waveform preview"></canvas><div class="file-picker-row"><button id="chooseA" type="button" aria-label="Choose WAV for Table A">CHOOSE FILE</button><input id="fileA" type="file" accept=".wav,audio/wav" hidden><p id="nameA" class="wavetable-filename">No file selected.</p></div><button id="sendA" disabled>SEND TABLE A</button></div>
+<div class="table-block"><h3>Table B</h3><canvas class="wavetable-preview" id="previewB" width="1000" height="240" aria-label="Table B waveform preview"></canvas><div class="file-picker-row"><button id="chooseB" type="button" aria-label="Choose WAV for Table B">CHOOSE FILE</button><input id="fileB" type="file" accept=".wav,audio/wav" hidden><p id="nameB" class="wavetable-filename">No file selected.</p></div><button id="sendB" disabled>SEND TABLE B</button></div>
+<progress id="transferProgress" max="1024" value="0" hidden aria-label="Wavetable transfer progress"></progress></section>
+<section class="editor-section preset-section" aria-labelledby="storageTitle"><h2 id="storageTitle">Device Storage</h2><div class="preset-row"><button id="store" disabled>STORE TO EEPROM</button></div></section>
+</div></div><section class="monitor-log"><p>-----</p><p>Ascetik. 2015 - 2026<span class="cursor" aria-hidden="true"></span></p></section>
+</main><script src="js/protocol.js"></script><script src="js/midi.js"></script><script src="js/wav.js"></script><script src="js/main.js"></script><script src="firmware-info.js"></script><script src="./picoboot.js"></script><script src="./firmware.js"></script></body></html>
