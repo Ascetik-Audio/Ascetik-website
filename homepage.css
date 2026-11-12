@@ -1,0 +1,251 @@
+/* Shared design: 16px type, 2px lines, black / white / gray. */
+:root {
+  --panel-width: min(500px, calc(100vw - 24px));
+  --section-gap: 48px;
+  --black: #000000;
+  --white: #FFFFFF;
+  --gray: #808080;
+}
+
+body {
+  margin: 0;
+  background: var(--black);
+  color: var(--white);
+  font: 16px "Silkscreen", system-ui, sans-serif;
+}
+
+main { padding-left: 15%; }
+section { margin-top: 24px; }
+[hidden] { display: none !important; }
+
+/* Header, sections and typography. */
+.device-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--black);
+  padding: 24px 0;
+  margin-bottom: max(0px, calc(var(--section-gap) - 24px));
+}
+
+.logo {
+  display: block;
+  max-width: var(--panel-width);
+  height: auto;
+}
+
+#monitorSection { margin: 24px 0 0; }
+.monitor-log {
+  font-family: "Sixtyfour", "Silkscreen", system-ui, sans-serif;
+  line-height: 2;
+  height: 8em;
+}
+#monitorLog {
+  height: auto;
+  min-height: 2em;
+  overflow-wrap: anywhere;
+}
+#monitorLog.error { color: var(--gray); }
+
+.settings-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+#settingsSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--section-gap);
+  margin: 0 0 72px;
+}
+.editor-section { margin-top: 0; }
+.editor-section > :last-child { margin-bottom: 0; }
+.device-intro {
+  margin: 0;
+  max-width: var(--panel-width);
+  line-height: 1.5;
+}
+h2, h3 { font-size: 16px; font-weight: 700; }
+#settingsSection h2 {
+  margin: 0 0 24px;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+
+/* Form controls. */
+button, select, input {
+  font: inherit;
+  color: var(--white);
+  background: var(--black);
+}
+button, select, input[type="text"] { border: 2px solid var(--white); }
+select { padding: 0; }
+button {
+  border-radius: 0;
+  padding: 4px 8px;
+}
+button:active { background: var(--white); color: var(--black); }
+button:disabled { opacity: 1; color: var(--gray); background: var(--black); }
+input[type="text"]::placeholder { color: var(--gray); }
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+button:focus-visible, select:focus-visible, .cc-field:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: 3px;
+}
+.select-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.select-row-stack { flex-direction: column; align-items: flex-start; }
+.slider-wrap {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
+}
+.slider-meta { display: inline-flex; align-items: baseline; gap: .5ch; }
+
+/* Keep browser-specific slider pseudo-elements separate. */
+input[type="range"] {
+  --range-fill: 0%;
+  width: var(--panel-width);
+  height: 18px;
+  appearance: none;
+  border: 2px solid var(--white);
+  padding: 0;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 18px;
+  background: linear-gradient(to right, var(--white) var(--range-fill), var(--black) var(--range-fill));
+}
+input[type="range"]::-moz-range-track {
+  height: 18px;
+  background: linear-gradient(to right, var(--white) var(--range-fill), var(--black) var(--range-fill));
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 18px;
+  background: var(--white);
+  border: 2px solid var(--white);
+  margin-top: 0;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 18px;
+  background: var(--white);
+  border: 2px solid var(--gray);
+}
+
+/* MIDI mapping and presets. */
+.cc-grid-wrap { width: var(--panel-width); max-width: 100%; }
+.cc-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 6px; }
+.cc-buttons { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
+.cc-group-title { margin: 28px 0 12px; }
+.cc-grid-title + .cc-group-title { margin-top: 0; }
+.leaf-cc { display: flex; flex-direction: column; align-items: flex-start; }
+.cc-field {
+  box-sizing: border-box;
+  width: calc((var(--panel-width) - 28px) / 8);
+  min-width: 0;
+  height: 36px;
+  padding: 8px 0;
+  text-align: center;
+  justify-self: center;
+}
+.cc-field:focus { outline: none; background: var(--gray); }
+.cc-field:focus-visible { outline: 2px solid var(--white); }
+.cc-field:disabled { color: var(--gray); border-color: var(--gray); }
+.cc-field[aria-invalid="true"] { border-color: var(--gray); }
+.preset-name { width: 12ch; }
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  max-width: var(--panel-width);
+}
+
+/* Waveform previews and file selection. */
+.table-block { margin: 32px 0; max-width: var(--panel-width); }
+.wavetable-preview {
+  display: block;
+  width: 100%;
+  height: 120px;
+  margin: 16px 0;
+  border: 2px solid var(--white);
+  background: var(--black);
+}
+.file-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  margin: 16px 0;
+}
+.file-picker-row button { flex: 0 0 auto; }
+.wavetable-filename {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  max-width: var(--panel-width);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Match the sliders with a half-height, square black-and-white track. */
+progress {
+  box-sizing: border-box;
+  width: var(--panel-width);
+  max-width: 100%;
+  height: 9px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 2px solid var(--white);
+  border-radius: 0;
+  padding: 0;
+  background: var(--black);
+  color: var(--white);
+}
+progress::-webkit-progress-bar { background: var(--black); border-radius: 0; }
+progress::-webkit-progress-value { background: var(--white); border-radius: 0; }
+progress::-moz-progress-bar { background: var(--white); border-radius: 0; }
+
+/* Footer cursor and responsive layout. */
+.cursor {
+  display: inline-block;
+  width: .75ch;
+  height: 1em;
+  background: var(--white);
+  margin-left: .25ch;
+  vertical-align: -.1em;
+  animation: blink 1s steps(1, end) infinite;
+}
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .cursor { animation: none; } }
+@media (max-width: 800px) { main { padding-left: 5px; } }
+@media (max-width: 550px) { main { padding: 12px; } }
+
+/* Latest firmware and BOOTSEL install steps. */
+.firmware-update { margin: 24px 0 32px; max-width: var(--panel-width); }
+.firmware-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.firmware-update a { color: inherit; }
+
+/* Overview links use the shared monochrome palette. */
+.device-intro a { color: inherit; text-underline-offset: 4px; }
+.device-intro a:focus-visible { outline: 2px solid var(--white); outline-offset: 3px; }
+
+/* Ash artwork on the overview page. */
+.ash-layout { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 24px; align-items: start; }
+.ash-logo { display: block; width: 120px; max-width: 100%; height: auto; margin: 0; }
+.ash-details { min-width: 0; overflow-wrap: anywhere; }
+.ash-details > p:first-child { margin-top: 0; }
+@media (max-width: 400px) {
+  .ash-layout { grid-template-columns: 80px minmax(0, 1fr); gap: 16px; }
+}

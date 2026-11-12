@@ -1,49 +1,44 @@
 <!doctype html>
-<html>
-
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Ascetik overview">
+    <meta name="description" content="Ascetik — DIY electronic musical instruments and gear.">
     <meta name="theme-color" content="#000000">
     <title>Ascetik</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Sixtyfour&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Sixtyfour&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="homepage.css">
 </head>
-
 <body>
     <main>
-        <section>
-            <a class="device-link" href="http://www.ascetik.de"><img class="logo" src="ascetik.png"
-                alt="Ascetik" /></a>
-        </section>
-
-        <section id="monitorSection">
-            <div class="monitor-log ascetik-text">
-                Ascetik is a one-man endeavor focused on DIY electronic musical instruments and gear, creating very
-                simple and small tools with limited features, yet capable of building intimate worlds to explore —
-                better suited to a hermit living under an oak tree than to a modern musician. Sometimes
-                things get weird, often intentionally lo-fi, but who cares.
+        <header class="device-header">
+            <a href="./" aria-label="Ascetik home"><img class="logo" src="img/ascetik.png" alt="Ascetik"></a>
+        </header>
+        <div class="settings-layout">
+            <div id="settingsSection">
+                <p class="device-intro">===<br>Ascetik is a one-man endeavor focused on DIY electronic musical instruments and gear, creating very simple and small tools with limited features, yet capable of building intimate worlds to explore — better suited to a hermit living under an oak tree than to a modern musician. Sometimes things get weird, often intentionally lo-fi, but who cares.<br>===</p>
+                <section class="editor-section device-intro" aria-labelledby="ashTitle">
+                    <h2 id="ashTitle">Ash</h2>
+                    <div class="ash-layout">
+                    <img class="ash-logo" src="img/ash-logo.png" alt="Pixel art ash leaves" width="250" height="300">
+                    <div class="ash-details">
+                    <p>Ash puts hands-on control in a compact instrument: 13 knobs, eight buttons, and a leaf-shaped touch pad, with USB and TRS MIDI connectivity and stereo audio output.</p>
+                    </div>
+                    </div>
+                    <nav aria-labelledby="firmwareTitle">
+                    <h3 id="firmwareTitle">Available firmware</h3>
+                    <a href="ash-wave/index.html">Ash-Wave</a> — Wavetable synthesizer.<br><br>
+                    <a href="ash-midi/index.html">Ash-MIDI</a> — MIDI controller and keyboard.
+                    </nav>
+                </section>
             </div>
-        </section>
-
-        <!-- <section class="devices-section">
-            <div class="monitor-log ascetik-text">
-                <p>/// Machines ///<br>Here are a few devices I've been developing recently:</p>
-            </div>
-            <div class="device-entry">
-                <a class="device-link monitor-log ascetik-text" href="ash.html">&gt;&gt;&gt; ASH &lt;&lt;&lt;
-                    <img class="ash-image" src="Ash - leaves.png" alt="Ash" /></a>
-            </div>
-        </section> -->
-        <section class="monitor-log">
-            <p>---</p>
-            <p>2015-2026<span class="cursor" aria-hidden="true"></span></p>
+        </div>
+        <section class="monitor-log" aria-label="Copyright">
+            <p>-----</p>
+            <p>Ascetik. 2015 - 2026<span class="cursor" aria-hidden="true"></span></p>
         </section>
     </main>
 </body>
-
 </html>
