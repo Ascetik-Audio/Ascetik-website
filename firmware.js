@@ -14,7 +14,7 @@
   if (!manifest || !/^[A-Za-z0-9.-]+\.uf2$/.test(manifest.file) || !/^[a-f0-9]{64}$/.test(manifest.sha256 || '')) {
     version.textContent = 'Latest firmware unavailable. Reload the page to retry.'; button.disabled = true; return;
   }
-  version.textContent = `Latest firmware: v${manifest.version} · ${manifest.date}`;
+  version.textContent = `Latest Firmware: ${manifest.file}`;
   if (!window.isSecureContext || !navigator.usb || !navigator.serial) {
     button.disabled = true;
     status.textContent = 'Automatic flashing requires desktop Chrome or Edge with USB and serial access (HTTPS or localhost).';
@@ -116,7 +116,7 @@
         status.textContent = `Installing and verifying firmware… ${progress.value}%`;
       });
       stage = 'start'; button.textContent = 'INSTALL FIRMWARE';
-      status.textContent = `Firmware v${manifest.version} verified. Ash is restarting.`;
+      status.textContent = `${manifest.file} verified. Ash is restarting.`;
     } catch (error) {
       recover.hidden = false;
       if (error.name === 'NotFoundError') status.textContent = 'Device selection cancelled. Press the button to try again.';
