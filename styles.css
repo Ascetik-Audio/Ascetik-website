@@ -60,6 +60,15 @@ section { margin-top: 24px; }
   margin: 0 0 72px;
 }
 .editor-section { margin-top: 0; }
+.device-connection {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: var(--panel-width);
+  margin-bottom: 24px;
+}
+.device-connection p { margin: 0; line-height: 1.5; }
 .editor-section > :last-child { margin-bottom: 0; }
 .device-intro {
   margin: 0;
@@ -89,14 +98,21 @@ button, select, input {
   color: var(--white);
   background: var(--black);
 }
-button, select, input[type="text"] { border: 2px solid var(--white); }
+button, select, input[type="text"], input[type="number"] { border: 2px solid var(--white); }
+button, input[type="text"], input[type="number"] {
+  box-sizing: border-box;
+  height: 36px;
+  line-height: 24px;
+  padding: 4px 8px;
+  border-radius: 0;
+}
 select { padding: 0; }
 button {
   border-radius: 0;
   padding: 4px 8px;
 }
 button:active { background: var(--white); color: var(--black); }
-button:disabled { opacity: 1; color: var(--gray); background: var(--black); }
+button:disabled { opacity: 1; color: var(--gray); border-color: var(--gray); background: var(--black); }
 input[type="text"]::placeholder { color: var(--gray); }
 fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 button:focus-visible, select:focus-visible, .cc-field:focus-visible {
@@ -159,8 +175,7 @@ input[type="range"]::-moz-range-thumb {
   box-sizing: border-box;
   width: calc((var(--panel-width) - 28px) / 8);
   min-width: 0;
-  height: 36px;
-  padding: 8px 0;
+  padding: 4px 0;
   text-align: center;
   justify-self: center;
 }
@@ -245,6 +260,19 @@ progress::-moz-progress-bar { background: var(--white); border-radius: 0; }
 .firmware-update { margin: 24px 0 32px; max-width: var(--panel-width); }
 .firmware-row { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
 .firmware-update a { color: inherit; }
+.firmware-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.firmware-download {
+  display: inline-block;
+  font: inherit;
+  color: var(--white);
+  background: var(--black);
+  border: 2px solid var(--white);
+  border-radius: 0;
+  padding: 4px 8px;
+  text-decoration: none;
+}
+.firmware-download:active { background: var(--white); color: var(--black); }
+.firmware-download:focus-visible { outline: 2px solid var(--white); outline-offset: 3px; }
 
 /* Overview links use the shared monochrome palette. */
 .device-intro a { color: inherit; text-underline-offset: 4px; }

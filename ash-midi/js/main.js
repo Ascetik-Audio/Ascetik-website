@@ -17,6 +17,7 @@
   function controls() {
     const disabled=locked||connection.syncing;
     for(const field of [velocity,channel,brightness,mode,...fields,byId('presetName'),save,load]) field.disabled=disabled;
+    byId('connect').disabled=disabled;
     store.disabled=disabled||!connection.ready;
   }
   function rangeFill(input) {input.style.setProperty('--range-fill',`${(Number(input.value)-Number(input.min))/(Number(input.max)-Number(input.min))*100}%`);}
@@ -54,6 +55,7 @@
     if(locked||connection.syncing) return;locked=true;controls();clearTimeout(timer);
     try {await flush();await callback();}catch(e){status(e.message,true);}finally{locked=false;controls();}
   }
+  byId('connect').addEventListener('click',()=>action(()=>connection.retry()));
   for(const input of [velocity,channel,brightness]) input.addEventListener('input',()=>{
     settings[input===velocity?'velocity':input===channel?'channel':'brightness']=Number(input.value);
     byId(input===velocity?'velVal':input===channel?'midiChannelVal':'brightnessVal').textContent=input.value;rangeFill(input);changed();
@@ -89,5 +91,5 @@
       if(connection.ready) {await flush();status('JSON loaded and sent to device');}else status('JSON loaded locally');
     }finally{file.value='';}
   }));
-  render();void connection.start();
+  render();status('Press Connect to device to connect Ascetik Ash MIDI.');
 })();

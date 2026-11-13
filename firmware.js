@@ -6,15 +6,31 @@
   const manifest = window.ASH_FIRMWARE;
   const row = document.createElement('div'); row.className = 'firmware-row';
   const version = document.createElement('span');
-  const button = document.createElement('button'); button.type = 'button'; button.textContent = 'INSTALL FIRMWARE';
-  const status = document.createElement('p'); status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
+  const button = document.createElement('button'); button.type = 'button'; button.textContent = 'INSTALL';
+  let status = document.getElementById('monitorLog');
+  if (!status) {
+    status = document.createElement('div'); status.id = 'monitorLog'; status.className = 'monitor-log';
+    const section = document.createElement('div'); section.id = 'monitorSection';
+    section.append(status);
+    document.querySelector('.device-header').append(section);
+  }
+  status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
   const progress = document.createElement('progress'); progress.max = 100; progress.value = 0; progress.hidden = true;
   progress.setAttribute('aria-label', 'Firmware installation progress');
-  row.append(version, button); host.append(row, status, progress);
+  const actions = document.createElement('div'); actions.className = 'firmware-actions';
+  actions.append(button);
+  row.append(version, actions); host.append(row, progress);
   if (!manifest || !/^[A-Za-z0-9.-]+\.uf2$/.test(manifest.file) || !/^[a-f0-9]{64}$/.test(manifest.sha256 || '')) {
-    version.textContent = 'Latest firmware unavailable. Reload the page to retry.'; button.disabled = true; return;
+    status.textContent = 'Latest firmware unavailable. Reload the page to retry.'; button.disabled = true; return;
   }
-  version.textContent = `Latest Firmware: ${manifest.file}`;
+  version.textContent = `${manifest.file}`;
+  const download = document.createElement('a');
+  download.className = 'firmware-download'; download.textContent = 'DOWNLOAD';
+  download.href = `firmware/${manifest.file}`; download.download = manifest.file;
+  download.addEventListener('click', () => {
+    status.textContent = `To install ${manifest.file}: disconnect Ash from USB. Hold BOOTSEL on the Pico while reconnecting USB, then release it. Copy the downloaded UF2 file to the RPI-RP2 drive. Ash will restart automatically when copying finishes.`;
+  });
+  actions.append(download);
   if (!window.isSecureContext || !navigator.usb || !navigator.serial) {
     button.disabled = true;
     status.textContent = 'Automatic flashing requires desktop Chrome or Edge with USB and serial access (HTTPS or localhost).';
@@ -27,7 +43,7 @@
   function image() {
     if (!imagePromise) imagePromise = new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = `firmware-image.js?v=${manifest.sha256}`;
+      script.src = `firmware/firmware-image.js?v=${manifest.sha256}`;
       script.onload = async () => {
         try {
           const encoded = window.ASH_FIRMWARE_IMAGE;
@@ -51,13 +67,6 @@
       if (!devices.some(isBoot) && !ports.some(isAsh)) stage = 'serial';
       button.disabled = false;
     }).catch(e => { status.textContent = e.message; });
-  const recover = document.createElement('button');
-  recover.type = 'button'; recover.textContent = 'CONNECT BOOTLOADER'; recover.hidden = true;
-  host.append(recover);
-  recover.addEventListener('click', () => {
-    if (busy) return;
-    stage = 'boot'; button.click();
-  });
   async function grantedBoot() { return (await navigator.usb.getDevices()).filter(isBoot); }
   async function waitBoot() {
     for (let i = 0; i < 40; i++) {
@@ -75,7 +84,7 @@
   }
   button.addEventListener('click', async () => {
     if (busy) return;
-    busy = true; button.disabled = true; recover.hidden = true;
+    busy = true; button.disabled = true;
     let boot, port, flasher;
     try {
       // A new permission picker must be called directly from a click, before awaits.
@@ -115,12 +124,16 @@
         progress.value = Math.round(done * 100 / total);
         status.textContent = `Installing and verifying firmware… ${progress.value}%`;
       });
-      stage = 'start'; button.textContent = 'INSTALL FIRMWARE';
+      stage = 'start'; button.textContent = 'INSTALL';
       status.textContent = `${manifest.file} verified. Ash is restarting.`;
     } catch (error) {
-      recover.hidden = false;
-      if (error.name === 'NotFoundError') status.textContent = 'Device selection cancelled. Press the button to try again.';
-      else status.textContent = `${error.message} If Ash is in update mode, press the button to reconnect and retry.`;
+      if (error.name === 'NotFoundError') {
+        button.textContent = stage === 'serial' ? 'SELECT ASH & FLASH' : 'CONNECT BOOTLOADER';
+        status.textContent = 'Device selection cancelled. Press the button to try again.';
+      } else {
+        stage = 'boot'; button.textContent = 'CONNECT BOOTLOADER';
+        status.textContent = `${error.message} If Ash is in update mode, press the installation button to reconnect and retry.`;
+      }
       if (boot) { stage = 'boot'; button.textContent = 'RECONNECT & FLASH'; }
     } finally {
       if (port) { try { await port.close(); } catch (_) {} }

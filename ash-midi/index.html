@@ -17,15 +17,19 @@
         <header class="device-header">
             <a href="../" aria-label="Ascetik home"><img class="logo" src="../img/ascetik.png" alt="Ascetik Monitor"></a>
         <div id="monitorSection">
-            <div id="monitorLog" class="monitor-log" role="status" aria-live="polite">Looking for Ascetik Ash MIDI…</div>
+            <div id="monitorLog" class="monitor-log" role="status" aria-live="polite">Press Connect to device to connect Ascetik Ash MIDI.</div>
         </div>
         </header>
         <div class="settings-layout">
             <div id="settingsSection">
                 <p class="device-intro">===<br>Ascetik Ash MIDI is a MIDI controller and stereo USB audio interface. Map your controls, manage presets, and configure your device here.<br><br>Browser support: use desktop Chrome or Edge and allow MIDI access, including SysEx.<br><br>Storing to EEPROM during audio playback may cause a brief noise.<br>===</p>
-<div class="firmware-update"></div>
+<div class="firmware-update"><h2>Latest firmware</h2></div>
                 <section class="editor-section" aria-labelledby="deviceSettingsTitle">
                 <h2 id="deviceSettingsTitle">Device Settings</h2>
+<div class="device-connection">
+<p id="connectDescription">Connect via MIDI to read and edit your device settings. Allow MIDI access when prompted.</p>
+<button id="connect" type="button" aria-describedby="connectDescription">Connect to device</button>
+</div>
                 <div class="slider-wrap velocity-control">
                     <div class="slider-meta"><label class="slider-name" for="vel">Velocity:</label><output class="slider-value" id="velVal" for="vel">127</output></div>
                     <input id="vel" type="range" min="27" max="127" value="127">
@@ -80,9 +84,14 @@
                         <input id="presetName" class="preset-name" type="text" maxlength="64" placeholder="preset name" aria-label="Preset name">
                         <button id="savePreset">SAVE</button>
                         <button id="loadPreset">LOAD PRESET</button>
-                        <button id="storePreset" disabled>Store to EEPROM</button>
                     </div>
                     <input id="presetFile" type="file" accept=".json,application/json" hidden>
+                </section>
+                <section class="editor-section" aria-labelledby="storageTitle">
+                    <h2 id="storageTitle">Save Settings to Device</h2>
+                    <div class="preset-row">
+                        <button id="storePreset" disabled>Store to EEPROM</button>
+                    </div>
                 </section>
             </div>
         </div>
@@ -91,5 +100,5 @@
     <script src="js/protocol.js"></script>
     <script src="js/midi.js"></script>
     <script src="js/main.js"></script>
-<script src="firmware-info.js"></script><script src="../picoboot.js"></script><script src="../firmware.js"></script></body>
+<script src="firmware/firmware-info.js"></script><script src="../picoboot.js"></script><script src="../firmware.js"></script></body>
 </html>

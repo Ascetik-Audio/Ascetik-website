@@ -4,6 +4,7 @@ const $=id=>document.getElementById(id),P=globalThis.AshMidiProtocol,W=globalThi
 const tables=[null,null],loaded=[0,0];let connected=false,busy=false;
 function status(message,error=false) {$('monitorLog').textContent=message;$('monitorLog').style.color=error?'#808080':'';}
 function controls() {
+ $('connect').disabled=busy||connection.syncing;
  $('deviceControls').disabled=busy;$('store').disabled=!connected||busy;
  ['A','B'].forEach((name,i)=>{$(`send${name}`).disabled=!connected||busy||!tables[i];$(`file${name}`).disabled=busy;$(`choose${name}`).disabled=busy;});
 }
@@ -34,6 +35,7 @@ for(const id of ['audioMode','balance','brightness']) $(id).addEventListener('ch
  settings(reply);status('Device settings updated.');
  });
 });
+$('connect').addEventListener('click',()=>run(()=>connection.retry()));
 $('store').addEventListener('click',()=>run(async()=>{await connection.send(P.commands.save);status('Both device tables, brightness, USB audio routing and balance stored to EEPROM.');}));
 function draw(name,table) {
  const canvas=$(`preview${name}`),ctx=canvas.getContext('2d');
@@ -73,5 +75,5 @@ function draw(name,table) {
 const previewResize=new ResizeObserver(()=>['A','B'].forEach((name,id)=>draw(name,tables[id])));
 for(const name of ['A','B']) previewResize.observe($(`preview${name}`));
 controls();
-void connection.start();
+status('Press Connect to device to connect Ascetik Ash Wave.');
 })();
