@@ -34,7 +34,11 @@ section { margin-top: 24px; }
   height: auto;
 }
 
-#monitorSection { margin: 24px 0 0; }
+#monitorSection {
+  width: var(--panel-width);
+  max-width: 100%;
+  margin: 24px 0 0;
+}
 .monitor-log {
   font-family: "Sixtyfour", "Silkscreen", system-ui, sans-serif;
   line-height: 2;

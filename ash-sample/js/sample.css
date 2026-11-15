@@ -1,0 +1,21 @@
+/* Sampler-specific layout; typography, colors and controls use shared Ash styles. */
+.sample-section, .sample-note { max-width: var(--panel-width); }
+.sample-note { line-height: 1.5; }
+.sample-slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; width: var(--panel-width); max-width: 100%; margin: 24px 0; }
+.sample-slots button { min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sample-slots button.active { background: var(--white); color: var(--black); }
+.sample-slots button.active:disabled { background: var(--black); color: var(--gray); }
+.sample-field { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; max-width: 100%; }
+.sample-field input { max-width: 100%; min-width: 0; }
+.sample-region { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin: 24px 0; }
+.sample-region input { width: 15ch; }
+.sample-region button { flex: 0 0 auto; }
+#usage { max-width: var(--panel-width); line-height: 1.5; }
+#progress { display: block; margin-top: 24px; }
+button, input, select { touch-action: manipulation; }
+input:focus-visible { outline: 2px solid var(--white); outline-offset: 3px; }
+@media (max-width: 550px) { .sample-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.playback-modes { margin: 16px 0; }
+.playback-modes button[aria-pressed="true"] { background: var(--white); color: var(--black); }
+.playback-modes button:disabled { background: var(--black); color: var(--gray); }

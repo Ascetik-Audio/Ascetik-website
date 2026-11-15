@@ -1,0 +1,120 @@
+(function () {
+  'use strict';
+  const {request,response,commands}=globalThis.AshMidiProtocol;
+  // CoreMIDI can retain an older Ash/Sample name when firmware shares the same
+  // USB identity. Names identify candidates; a v3 settings reply identifies Ash Sample.
+  function pairKey(input,output) {return `${input.id}::${output.id}`;}
+  function matchingPair(access,currentInput=null,failed=new Set()) {
+    const active=p=>p.state==='connected';
+    const family=p=>/^(?:Ascetik )?Ash(?:\b|$)/i.test(p.name||'')&&
+      (/^Ascetik\b/i.test(p.name||'')||/^Ascetik$/i.test(p.manufacturer||'')||/^Ash Sample(?:\b|$)/i.test(p.name||''));
+    const preferred=p=>/^(?:Ascetik )?Ash Sample(?:\b|$)/i.test(p.name||'');
+    const inputs=[...access.inputs.values()].filter(p=>active(p)&&family(p));
+    inputs.sort((a,b)=>Number(b.id===currentInput?.id)-Number(a.id===currentInput?.id)||Number(preferred(b))-Number(preferred(a)));
+    for(const input of inputs) {
+      const outputs=[...access.outputs.values()].filter(p=>active(p)&&p.name===input.name);
+      outputs.sort((a,b)=>Number(b.manufacturer===input.manufacturer)-Number(a.manufacturer===input.manufacturer));
+      for(const output of outputs) if(!failed.has(pairKey(input,output))) return {input,output};
+    }
+    return null;
+  }
+  class Connection {
+    constructor(handlers={},navigatorObject=globalThis.navigator) {
+      this.handlers=handlers;this.navigator=navigatorObject;this.access=null;
+      this.input=null;this.output=null;this.ready=false;this.syncing=false;
+      this.sequence=0;this.epoch=0;this.pending=null;this.chain=Promise.resolve();
+      this.refreshing=false;this.again=false;this.failed=new Set();
+    }
+    status(message,error=false) {this.handlers.onStatus?.(message,error);}
+    notify() {this.handlers.onConnection?.(this.ready,this.syncing);}
+    cancel() {
+      if(this.pending) {const p=this.pending;this.pending=null;clearTimeout(p.timer);p.reject(Error('Ash disconnected.'));}
+    }
+    async start() {
+      if(!this.navigator?.requestMIDIAccess) {
+        this.status('WebMIDI not supported — use a compatible browser',true);this.handlers.onPermission?.(false);return;
+      }
+      if(this.starting) return;
+      this.starting=true;
+      try {
+        this.status('Looking for Ascetik Ash Sample…');
+        if(!this.access) this.access=await this.navigator.requestMIDIAccess({sysex:true});
+        this.handlers.onPermission?.(true);
+        this.access.onstatechange=()=>{
+          if(this.input?.state==='disconnected'||this.output?.state==='disconnected') this.cancel();
+          // A real unplug/replug allows failed candidates to be probed again.
+          for(const key of this.failed) {
+            const [inputId,outputId]=key.split('::');
+            if(this.access.inputs.get(inputId)?.state!=='connected'||this.access.outputs.get(outputId)?.state!=='connected') this.failed.delete(key);
+          }
+          void this.refresh();
+        };
+        await this.refresh();
+      } catch(e) {
+        this.status(e.message||'MIDI access denied or SysEx blocked',true);this.handlers.onPermission?.(false);
+      } finally {this.starting=false;}
+    }
+    async refresh() {
+      if(this.refreshing) {this.again=true;return;}
+      this.refreshing=true;
+      try {
+        do {this.again=false;await this.select();} while(this.again);
+      } finally {this.refreshing=false;}
+    }
+    async select() {
+      const pair=matchingPair(this.access,this.input,this.failed);
+      if(pair&&pair.input===this.input&&pair.output===this.output) return;
+      ++this.epoch;this.cancel();this.ready=false;this.syncing=false;
+      if(this.input) this.input.onmidimessage=null;
+      // Detach synchronously: hotplug callbacks cannot reuse a stale output.
+      this.input=pair?.input||null;this.output=pair?.output||null;this.notify();
+      if(!pair) {
+        this.status(this.failed.size?'Ash found, but no Ash Sample protocol reply — check firmware or retry':'No Ascetik Ash Sample connected',this.failed.size>0);
+        if(this.failed.size) this.handlers.onPermission?.(false);
+        return;
+      }
+      const epoch=this.epoch;
+      this.syncing=true;this.notify();this.status('Checking Ash Sample and loading device state…');
+      try {
+        this.input.onmidimessage=event=>{if(epoch===this.epoch) this.receive(event);};
+        await this.input.open();await this.output.open();
+        if(epoch!==this.epoch||this.input.state!=='connected'||this.output.state!=='connected') throw Error('Ash disconnected.');
+        const settings=await this.send(commands.get);
+        if(epoch!==this.epoch) return;
+        this.ready=true;this.handlers.onSettings?.(settings);this.status('Connected to Ascetik Ash Sample');
+      } catch(e) {
+        this.failed.add(pairKey(pair.input,pair.output));
+        this.input.onmidimessage=null;this.input=this.output=null;this.ready=false;
+        this.status(e.message,true);this.handlers.onPermission?.(false);this.again=true;
+      } finally {this.syncing=false;this.notify();}
+    }
+    send(command,payload=[]) {
+      const epoch=this.epoch;
+      const job=this.chain.then(()=>{
+        if(epoch!==this.epoch||!this.input||!this.output||this.input.state!=='connected'||this.output.state!=='connected') throw Error('No Ascetik Ash Sample connected');
+        this.sequence=(this.sequence+1)%128;
+        return new Promise((resolve,reject)=>{
+          const timer=setTimeout(()=>{this.pending=null;reject(Error('Device state request timed out — reconnect or retry'));},2500);
+          this.pending={command,sequence:this.sequence,resolve,reject,timer};
+          try {this.output.send(request(command,this.sequence,payload));}
+          catch(e) {clearTimeout(timer);this.pending=null;reject(e);}
+        });
+      });
+      this.chain=job.catch(()=>{});return job;
+    }
+    receive(event) {
+      let reply;
+      try {reply=response(event.data||[]);}catch {return;}
+      if(!reply||!this.pending||reply.command!==this.pending.command||reply.sequence!==this.pending.sequence) return;
+      const p=this.pending;this.pending=null;clearTimeout(p.timer);
+      if(reply.status) p.reject(Error(['','Device rejected settings','Device is busy — finish or restart the sample bank transfer','Flash storage is unavailable or the write failed'][reply.status]||'Device error'));
+      else p.resolve(reply.settings);
+    }
+    async retry() {
+      // Re-read a connected device after a timeout, without another permission request.
+      if(this.input) this.input.onmidimessage=null;
+      this.input=this.output=null;this.ready=false;this.failed.clear();await this.start();
+    }
+  }
+  globalThis.AshMidiConnection={Connection,matchingPair};
+})();

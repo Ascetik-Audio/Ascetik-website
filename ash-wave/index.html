@@ -8,13 +8,10 @@
 </head><body><main>
 <header class="device-header"><a href="../" aria-label="Ascetik home"><img class="logo" src="../img/ascetik.png" alt="Ascetik"></a><div id="monitorSection"><div id="monitorLog" class="monitor-log" role="status" aria-live="polite">Press Connect to device to connect Ascetik Ash Wave.</div></div></header>
 <div class="settings-layout"><div id="settingsSection">
-<p class="device-intro">===<br>Ash Wave · wavetable synthesizer and stereo USB audio interface.<br><br>Choose Local mix to blend Ash with USB audio, or USB effects loop to process Ash on a connected device and hear the return. Upload single-cycle WAVs to tables A and B, automatically converted to 1,024 samples at 16-bit.<br><br>Use desktop Chrome or Edge and allow MIDI access, including SysEx.<br>===</p>
+<p class="device-intro">===<br>Ash Wave · wavetable synthesizer and stereo USB audio interface.<br><br>Choose Local mix to blend Ash with USB audio, or USB effects loop to process Ash on a connected device and hear the return. Upload single-cycle WAVs to tables A and B, automatically converted to 1,024 samples at 16-bit.<br><br>Use desktop Chrome or Edge and allow MIDI access, including SysEx.<br><br><span id="connectDescription">Connect via MIDI to read and edit your device settings. Allow MIDI access when prompted.</span><br><br><button id="connect" type="button" aria-describedby="connectDescription">Connect to device</button><br>===</p>
 <div class="firmware-update"><h2>Latest firmware</h2></div>
 <section class="editor-section" aria-labelledby="settingsTitle"><h2 id="settingsTitle">Device Settings</h2>
-<div class="device-connection">
-<p id="connectDescription">Connect via MIDI to read and edit your device settings. Allow MIDI access when prompted.</p>
-<button id="connect" type="button" aria-describedby="connectDescription">Connect to device</button>
-</div>
+
 <fieldset id="deviceControls">
 <div class="slider-wrap"><label class="select-row select-row-stack" for="audioMode"><span>USB Audio Mode</span><select id="audioMode"><option value="0">Local mix</option><option value="1">Effects loop</option></select></label></div>
 <div class="slider-wrap"><div class="slider-meta"><label class="slider-name" for="balance">Ash / USB Host Balance:</label><output class="slider-value" id="balanceVal" for="balance">64</output></div><input id="balance" type="range" min="0" max="127" value="64"></div>

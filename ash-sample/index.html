@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Ascetik Ash Sample settings and sample bank editor"><meta name="theme-color" content="#000000">
+<title>Ascetik — Ash Sample</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Sixtyfour&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css"><link rel="stylesheet" href="js/sample.css">
+</head><body><main>
+<header class="device-header"><a href="../" aria-label="Ascetik home"><img class="logo" src="../img/ascetik.png" alt="Ascetik"></a><div id="monitorSection"><div id="monitorLog" class="monitor-log" role="status" aria-live="polite">Press Connect to device to connect Ascetik Ash Sample.</div></div></header>
+<div class="settings-layout"><div id="settingsSection">
+<div class="device-intro">
+<p>===</p>
+<h3>Ash Sample</h3><p>Looping sample synthesizer and stereo USB audio interface.<br>8 slots · 8 voices · 21.67 seconds shared storage.<br>WAV imports: 24 kHz / 16-bit mono · source pitch C4.</p>
+<h3>USB Recording</h3><p>Send computer audio over USB. Select a slot with Waveform.<br>Tap leaf: record / stop · Hold 1 second: save · Max 12 seconds.<br>16 kHz mono, lossy &mu;-law: lower quality than WAV imports.<br>Save before another take or power-off. Magenta = save failed.</p>
+<h3>Connection</h3><p id="connectDescription">Use desktop Chrome or Edge. Connect via MIDI and allow access when prompted.</p>
+<button id="connect" type="button" aria-describedby="connectDescription">Connect to device</button>
+<p>===</p>
+</div>
+<div class="firmware-update"><h2>Latest firmware</h2></div>
+<section class="editor-section" aria-labelledby="settingsTitle"><h2 id="settingsTitle">Device Settings</h2>
+
+<fieldset id="deviceControls" disabled>
+<div class="slider-wrap"><label class="select-row select-row-stack" for="mode"><span>USB Audio Mode</span><select id="mode"><option value="0">Local mix</option><option value="1">Effects loop</option></select></label></div>
+<div class="slider-wrap"><div class="slider-meta"><label class="slider-name" for="balance">Ash / USB Host Balance:</label><output class="slider-value" id="balanceVal" for="balance">64</output></div><input id="balance" type="range" min="0" max="127" value="64"></div>
+<div class="slider-wrap"><div class="slider-meta"><label class="slider-name" for="brightness">LED Brightness:</label><output class="slider-value" id="brightnessVal" for="brightness">32</output></div><input id="brightness" type="range" min="0" max="127" value="32"></div>
+<div class="preset-row"><button id="saveSettings" type="button" disabled>STORE SETTINGS</button></div>
+</fieldset></section>
+<section class="editor-section sample-section" aria-labelledby="bankTitle"><h2 id="bankTitle">Sample Bank</h2>
+<p id="usage"></p><progress id="space" aria-label="Sample storage used"></progress><div id="slots" class="sample-slots" aria-label="Banks"></div>
+<div class="table-block"><h3 id="selectedTitle">Bank 01</h3><canvas class="wavetable-preview" id="wave" width="1000" height="240" aria-label="Selected sample waveform"></canvas>
+<div class="file-picker-row"><button id="choose" type="button">CHOOSE FILE</button><p id="selectedName" class="wavetable-filename">No file selected.</p></div><input id="file" type="file" accept=".wav,audio/wav" hidden>
+<div class="preset-row playback-modes" role="group" aria-label="Playback mode"><button id="modeLoop" type="button" aria-pressed="true">LOOP</button><button id="modeOneShot" type="button" aria-pressed="false">ONE SHOT</button></div>
+<div class="preset-row"><button id="preview" type="button">PREVIEW</button><button id="remove" type="button">CLEAR BANK</button><button id="send" type="button" disabled>SEND BANK</button><button id="read" type="button" disabled>READ BANK</button></div>
+</div>
+<progress id="progress" hidden aria-label="Bank transfer progress"></progress>
+</section>
+<section class="editor-section" aria-labelledby="backupTitle"><h2 id="backupTitle">Bank Backup</h2><p class="sample-note">Save all eight editor slots as one .ashs file. Use READ BANK first to back up the device.</p><div class="preset-row"><button id="backup" type="button">DOWNLOAD BACKUP</button><button id="restore" type="button">OPEN BACKUP</button></div><input id="bankFile" type="file" accept=".ashs" hidden></section>
+</div></div><section class="monitor-log"><p>-----</p><p>Ascetik. 2015 - 2026<span class="cursor" aria-hidden="true"></span></p></section>
+</main><script src="js/bank.js?v=31b917a4fa15"></script><script src="js/protocol.js?v=b23bb0361d14"></script><script src="js/midi.js?v=03bc772f2f51"></script><script src="js/main.js?v=52f10aac8249"></script><script src="firmware/firmware-info.js?v=dc37ccc2a76a"></script><script src="../picoboot.js"></script><script src="../firmware.js"></script></body></html>

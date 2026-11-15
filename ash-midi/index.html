@@ -22,14 +22,11 @@
         </header>
         <div class="settings-layout">
             <div id="settingsSection">
-                <p class="device-intro">===<br>Ascetik Ash MIDI is a MIDI controller and stereo USB audio interface. Map your controls, manage presets, and configure your device here.<br><br>Browser support: use desktop Chrome or Edge and allow MIDI access, including SysEx.<br><br>Storing to EEPROM during audio playback may cause a brief noise.<br>===</p>
+                <p class="device-intro">===<br>Ascetik Ash MIDI is a MIDI controller and stereo USB audio interface. Map your controls, manage presets, and configure your device here.<br><br>Browser support: use desktop Chrome or Edge and allow MIDI access, including SysEx.<br><br>Storing to EEPROM during audio playback may cause a brief noise.<br><br><span id="connectDescription">Connect via MIDI to read and edit your device settings. Allow MIDI access when prompted.</span><br><br><button id="connect" type="button" aria-describedby="connectDescription">Connect to device</button><br>===</p>
 <div class="firmware-update"><h2>Latest firmware</h2></div>
                 <section class="editor-section" aria-labelledby="deviceSettingsTitle">
                 <h2 id="deviceSettingsTitle">Device Settings</h2>
-<div class="device-connection">
-<p id="connectDescription">Connect via MIDI to read and edit your device settings. Allow MIDI access when prompted.</p>
-<button id="connect" type="button" aria-describedby="connectDescription">Connect to device</button>
-</div>
+
                 <div class="slider-wrap velocity-control">
                     <div class="slider-meta"><label class="slider-name" for="vel">Velocity:</label><output class="slider-value" id="velVal" for="vel">127</output></div>
                     <input id="vel" type="range" min="27" max="127" value="127">
