@@ -107,7 +107,7 @@
       try {reply=response(event.data||[]);}catch {return;}
       if(!reply||!this.pending||reply.command!==this.pending.command||reply.sequence!==this.pending.sequence) return;
       const p=this.pending;this.pending=null;clearTimeout(p.timer);
-      if(reply.status) p.reject(Error(['','Device rejected settings','Device is busy — finish or restart the sample bank transfer','Flash storage is unavailable or the write failed'][reply.status]||'Device error'));
+      if(reply.status) p.reject(Error(['','Device rejected the request','Device is busy — finish or restart the sample bank transfer','Not enough free flash space, or the write failed'][reply.status]||'Device error'));
       else p.resolve(reply.settings);
     }
     async retry() {

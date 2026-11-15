@@ -35,7 +35,18 @@ function number7(n,count=3) {return Array.from({length:count},(_,i)=>(n>>>(7*i))
 function pack(bytes) {return Array.from(bytes).flatMap(x=>[x&127,x>>>7]);}
 function unpack(bytes) {if(bytes.length%2) throw Error('Invalid packed data');const out=new Uint8Array(bytes.length/2);for(let i=0;i<out.length;i++){if(bytes[i*2+1]>1) throw Error('Invalid packed byte');out[i]=bytes[i*2]|bytes[i*2+1]<<7;}return out;}
 
-// Choose a longer overlap whose tail/head phases agree best. Match firmware.
+// Stratified probes avoid aliasing a periodic tone in the phase estimate.
+function seamCorrelation(sample,width) {
+ const {pcm,loopStart:start,loopEnd:end}=sample;
+ let dot=0,aa=0,bb=0;
+ for(let k=0;k<64;k++) {
+  const offset=(k*width+((width*((k*37+17)&63))>>6))>>6;
+  const a=pcm[end-width+offset]>>9,b=pcm[start+offset]>>9;
+  dot+=a*b;aa+=a*a;bb+=b*b;
+ }
+ return Math.max(-1,Math.min(1,aa&&bb?dot/Math.sqrt(aa*bb):0));
+}
+// Prefer a strong short match; retain near-best short fallbacks for weak material.
 function loopSettings(sample) {
  const {pcm,loopStart:start,loopEnd:end}=sample,length=end-start;
  if(length<16)return {width:0,profile:0};
@@ -43,14 +54,25 @@ function loopSettings(sample) {
  const first=(pcm[start+1]>>3)-head,last=tail-(pcm[end-2]>>3),wrap=head-tail;
  if(length<512&&Math.abs(wrap-first)<=32&&Math.abs(wrap-last)<=32)return {width:0,profile:0};
  const limit=Math.min(8192,Math.floor(length/2));let maximum=2;while(maximum*2<=limit)maximum*=2;
- let best={width:0,profile:0},score=-2,bias=0;
- for(let width=Math.min(1024,maximum);width<=maximum;width*=2,bias+=.03){
-  let dot=0,aa=0,bb=0;
-  for(let k=0;k<64;k++){const offset=k*width>>6,a=pcm[end-width+offset]>>9,b=pcm[start+offset]>>9;dot+=a*b;aa+=a*a;bb+=b*b;}
-  const r=Math.max(-1,Math.min(1,aa&&bb?dot/Math.sqrt(aa*bb):0));
-  if(r+bias>score){score=r+bias;best={width,profile:Math.max(0,Math.min(8,Math.floor(r*8+.5)))};}
+ const candidates=[];let bestWidth=Math.min(1024,maximum),bestScore=-2,strong=false;
+ for(let width=bestWidth;width<=maximum;width+=width<2048?32:256) {
+  const score=seamCorrelation(sample,width);candidates.push({width,score});
+  if(score>bestScore){bestScore=score;bestWidth=width;}
+  if(score>=.9){strong=true;break;}
  }
- return best;
+ if(!strong) {
+  const nearBest=bestScore-.1,candidate=candidates.find(item=>item.score>=nearBest);
+  bestWidth=candidate.width;bestScore=candidate.score;
+ }
+ if(maximum>1024) {
+  const radius=bestWidth<=2048?16:128,step=bestWidth<=2048?2:8;
+  const begin=Math.max(1024,bestWidth-radius),end=Math.min(maximum,bestWidth+radius);
+  for(let width=begin;width<=end;width+=step) {
+   const score=seamCorrelation(sample,width);
+   if(score>bestScore+.005){bestScore=score;bestWidth=width;}
+  }
+ }
+ return {width:bestWidth,profile:Math.max(0,Math.min(8,Math.floor(bestScore*8+.5)))};
 }
 function previewLoop(sample) {
  const {pcm,loopStart:start,loopEnd:end}=sample,length=end-start;
@@ -88,5 +110,5 @@ function normalizePCM(data) {
  return pcm;
 }
 
-window.AshSampleBank={CAPACITY, HEADER, SLOTS, crc32, loopSettings, previewLoop, normalizePCM, encodeBank, decodeBank, number7, pack, unpack};
+window.AshSampleBank={CAPACITY, HEADER, SLOTS, crc32, seamCorrelation, loopSettings, previewLoop, normalizePCM, encodeBank, decodeBank, number7, pack, unpack};
 })();

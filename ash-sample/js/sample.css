@@ -19,3 +19,6 @@ input:focus-visible { outline: 2px solid var(--white); outline-offset: 3px; }
 .playback-modes { margin: 16px 0; }
 .playback-modes button[aria-pressed="true"] { background: var(--white); color: var(--black); }
 .playback-modes button:disabled { background: var(--black); color: var(--gray); }
+
+.recording-instructions { list-style: none; padding-left: 1.5ch; }
+.recording-instructions li::before { content: "- "; margin-left: -1.5ch; }

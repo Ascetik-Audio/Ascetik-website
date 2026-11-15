@@ -2,7 +2,7 @@
 (() => {
 'use strict';
 const prefix=[0x7d,0x41,0x53,0x48,3];
-const commands={get:1,set:2,save:3,beginBank:7,bankChunk:8,commitBank:9,readBank:10,abort:11};
+const commands={get:1,set:2,save:3,beginBank:7,bankChunk:8,commitBank:9,readBank:10,abort:11,beginSlot:12,slotChunk:13,commitSlot:14};
 const integer=(v,min,max)=>Number.isInteger(v)&&v>=min&&v<=max;
 function request(command,sequence,payload=[]) {
  if(![command,sequence,...payload].every(v=>integer(v,0,127)))throw Error('Invalid MIDI data.');
