@@ -4,7 +4,8 @@
 - [Ash-MIDI](ash-midi/index.html)
 - Ash-FM: reserved for a future editor.
 
-All editors use `styles.css` and `img/ascetik.png`. Keep device-specific
+All editors use `styles.css`, `img/ascetik.png`, and the shared firmware installer
+scripts in `js/`. Keep device-specific
 HTML, JavaScript, protocols and tests in each editor folder. The logo is identical
 to the original assets. Device scripts and connection behavior are unchanged.
 

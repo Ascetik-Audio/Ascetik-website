@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const crypto = require('node:crypto');
 const web = path.resolve(__dirname, '..');
 const context = { setTimeout, clearTimeout };
-vm.runInNewContext(fs.readFileSync(path.join(web, 'picoboot.js'), 'utf8'), context);
+vm.runInNewContext(fs.readFileSync(path.join(web, 'js', 'picoboot.js'), 'utf8'), context);
 const { parseUF2, PicoBoot } = context.AshPicoBoot;
 for (const name of ['ash-wave', 'ash-midi', 'ash-fm', 'ash-8osc']) {
   test(`${name}: published firmware, digest, embedded image and UF2 agree`, () => {
