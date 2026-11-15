@@ -264,6 +264,15 @@ progress::-moz-progress-bar { background: var(--white); border-radius: 0; }
   h2 { font-size: 21px; }
   h3 { font-size: 16px; }
   button { font-size: 16px; }
+  .device-header { display: contents; }
+  .device-header > a {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--black);
+    padding: 24px 0;
+  }
 }
 
 /* Latest firmware and BOOTSEL install steps. */
