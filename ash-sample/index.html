@@ -7,25 +7,40 @@
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Sixtyfour&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../styles.css"><link rel="stylesheet" href="js/sample.css">
 </head><body><main>
-<header class="device-header"><a href="../" aria-label="Ascetik home"><img class="logo" src="../img/ascetik.png" alt="Ascetik"></a><div id="monitorSection"><div id="monitorLog" class="monitor-log" role="status" aria-live="polite">Press Connect to device to connect Ascetik Ash Sample.</div></div></header>
+<header class="device-header"><a href="../" aria-label="Ascetik home"><img class="logo" src="../img/ascetik.png" alt="Ascetik"></a><div id="monitorSection"><div id="monitorLog" class="monitor-log" role="status" aria-live="polite">Click Connect to Ash-Sample to get started.</div></div></header>
 <div class="settings-layout"><div id="settingsSection">
 <div class="device-intro">
 <p>===</p>
-<h3>Ash Sample</h3><p>Sample-based 8-voice synthesizer with 21.67 seconds of storage shared by 8 sample slots.</p>
+<h3>Ash Sample</h3><p>An eight-voice sample-based synthesizer with 21.67 seconds of storage shared across eight sample slots.</p>
 <h3>Sample recording</h3>
-<p>Record up to 12 seconds per slot of 16 kHz mono from USB audio.</p>
+<p>Record USB audio in 16 kHz mono, up to 12 seconds per slot.</p>
 <ul class="recording-instructions">
-<li>Select a slot</li>
-<li>Send audio over USB (Source pitch C4)</li>
-<li>Tap leaf: record / stop</li>
-<li>Hold 1 second: save</li>
+<li>Select a slot.</li>
+<li>Send audio over USB at source pitch C4.</li>
+<li>Tap the leaf touch pad to start or stop recording.</li>
+<li>Hold the leaf touch pad for one second to save.</li>
 <li>LED colors: cyan = idle; red = recording; white = recorded, not yet saved; yellow = saving; magenta = save failed.</li>
 </ul>
-<h3>Connection</h3><p id="connectDescription">Use desktop Chrome or Edge. Connect via MIDI and allow access when prompted.</p>
-<button id="connect" type="button" aria-describedby="connectDescription">Connect to device</button>
+<h3>Connection</h3><p id="connectDescription">Connect to manage samples and settings on Ash. Use desktop Chrome or Edge, connect via USB, and allow MIDI access.</p>
+<button id="connect" type="button" aria-describedby="connectDescription">Connect to Ash-Sample</button>
 <p>===</p>
 </div>
 <div class="firmware-update"><h2>Latest firmware</h2></div>
+
+<section class="editor-section sample-section" aria-labelledby="bankTitle"><h2 id="bankTitle">Sample Bank</h2>
+<p class="sample-note">Choose a slot and load a WAV file. The editor converts it to 24 kHz / 16-bit mono. Use SEND SLOT to save the sample and its playback mode on Ash.</p>
+<ul class="recording-instructions sample-note">
+<li>LOOP repeats the sample while a note is held and during the release envelope.</li>
+<li>ONE SHOT plays the entire sample once, even if the note is released early.</li>
+</ul>
+<p id="usage"></p><progress id="space" aria-label="Sample storage used"></progress><div id="slots" class="sample-slots" aria-label="Slots"></div>
+<div class="table-block"><h3 id="selectedTitle">Slot 01</h3><canvas class="wavetable-preview" id="wave" width="1000" height="240" aria-label="Selected sample waveform"></canvas>
+<div class="file-picker-row"><button id="choose" type="button">CHOOSE FILE</button><p id="selectedName" class="wavetable-filename">No file selected.</p></div><input id="file" type="file" accept=".wav,audio/wav" hidden>
+<div class="preset-row playback-modes" role="group" aria-labelledby="playbackModeLabel"><span id="playbackModeLabel">Playback mode:</span><button id="modeLoop" type="button" aria-pressed="true">LOOP</button><button id="modeOneShot" type="button" aria-pressed="false">ONE SHOT</button></div>
+<div class="preset-row"><button id="preview" type="button">PREVIEW</button><button id="remove" type="button">CLEAR SLOT</button><button id="send" type="button" disabled>SEND SLOT</button><button id="read" type="button" disabled>READ ALL</button></div>
+</div>
+<progress id="progress" hidden aria-label="Bank transfer progress"></progress>
+<p class="sample-note">Save your samples as an .ashs file or restore a backup to Ash.</p><div class="preset-row"><button id="backup" type="button">DOWNLOAD BACKUP</button><button id="restore" type="button">OPEN BACKUP</button></div><input id="bankFile" type="file" accept=".ashs" hidden></section>
 <section class="editor-section" aria-labelledby="settingsTitle"><h2 id="settingsTitle">Device Settings</h2>
 
 <fieldset id="deviceControls" disabled>
@@ -33,20 +48,5 @@
 <div class="slider-wrap"><div class="slider-meta"><label class="slider-name" for="brightness">LED Brightness:</label><output class="slider-value" id="brightnessVal" for="brightness">32</output></div><input id="brightness" type="range" min="0" max="127" value="32"></div>
 <div class="preset-row"><button id="saveSettings" type="button" disabled>STORE SETTINGS</button></div>
 </fieldset></section>
-<section class="editor-section sample-section" aria-labelledby="bankTitle"><h2 id="bankTitle">Sample Bank</h2>
-<p class="sample-note">Choose a slot and load a WAV file. The editor converts it to 24 kHz / 16-bit mono. Use SEND SLOT to save the sample and its playback mode on Ash.</p>
-<ul class="recording-instructions sample-note">
-<li>LOOP repeats the sample while a note is held, then follows the release envelope.</li>
-<li>ONE SHOT plays the sample once to the end, even if the note is released early.</li>
-</ul>
-<p id="usage"></p><progress id="space" aria-label="Sample storage used"></progress><div id="slots" class="sample-slots" aria-label="Slots"></div>
-<div class="table-block"><h3 id="selectedTitle">Slot 01</h3><canvas class="wavetable-preview" id="wave" width="1000" height="240" aria-label="Selected sample waveform"></canvas>
-<div class="file-picker-row"><button id="choose" type="button">CHOOSE FILE</button><p id="selectedName" class="wavetable-filename">No file selected.</p></div><input id="file" type="file" accept=".wav,audio/wav" hidden>
-<div class="preset-row playback-modes" role="group" aria-label="Playback mode"><button id="modeLoop" type="button" aria-pressed="true">LOOP</button><button id="modeOneShot" type="button" aria-pressed="false">ONE SHOT</button></div>
-<div class="preset-row"><button id="preview" type="button">PREVIEW</button><button id="remove" type="button">CLEAR SLOT</button><button id="send" type="button" disabled>SEND SLOT</button><button id="read" type="button" disabled>READ ALL</button></div>
-</div>
-<progress id="progress" hidden aria-label="Bank transfer progress"></progress>
-</section>
-<section class="editor-section" aria-labelledby="backupTitle"><h2 id="backupTitle">Bank Backup</h2><p class="sample-note">DOWNLOAD BACKUP saves all eight editor slots and their playback modes as one .ashs file on your computer. Use READ ALL first to back up the samples stored on Ash.</p><p class="sample-note">OPEN BACKUP loads an .ashs file into the editor, replacing its current slots. To restore it to Ash, select each slot and use SEND SLOT.</p><div class="preset-row"><button id="backup" type="button">DOWNLOAD BACKUP</button><button id="restore" type="button">OPEN BACKUP</button></div><input id="bankFile" type="file" accept=".ashs" hidden></section>
 </div></div><section class="monitor-log"><p>-----</p><p>Ascetik. 2015 - 2026<span class="cursor" aria-hidden="true"></span></p></section>
 </main><script src="js/bank.js?v=d7f19c2217dd"></script><script src="js/protocol.js?v=97e5b218b071"></script><script src="js/midi.js?v=27ed6571e73a"></script><script src="js/main.js?v=2a94c8287665"></script><script src="firmware/firmware-info.js?v=a62b29cd9625"></script><script src="../js/picoboot.js"></script><script src="../js/firmware.js"></script></body></html>

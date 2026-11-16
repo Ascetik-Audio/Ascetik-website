@@ -91,5 +91,5 @@
       if(connection.ready) {await flush();status('JSON loaded and sent to device');}else status('JSON loaded locally');
     }finally{file.value='';}
   }));
-  render();status('Press Connect to device to connect Ascetik Ash MIDI.');
+  render();status('Click Connect to Ash-MIDI to get started.');
 })();

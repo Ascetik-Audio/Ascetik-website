@@ -6,7 +6,7 @@ let slots=Array(8).fill(null),selected=0,busy=false,context,source,previewGain,s
 function log(message,error=false){status.textContent=message;status.style.color=error?'#808080':'';}
 function connected(){return connection.ready;}
 function update(){
- const used=slots.reduce((n,s)=>n+(s?.pcm.length||0)*2,0);$('usage').textContent=`${(used/48000).toFixed(2)} / ${((CAPACITY-HEADER)/48000).toFixed(2)} seconds · ${(used/1024).toFixed(0)} KB used`;
+ const used=slots.reduce((n,s)=>n+(s?.pcm.length||0)*2,0);$('usage').textContent=`Storage: ${(used/48000).toFixed(2)} / ${((CAPACITY-HEADER)/48000).toFixed(2)} seconds · ${(used/1024).toFixed(0)} KB used`;
  $('space').max=CAPACITY-HEADER;$('space').value=used;
  $('slots').replaceChildren(...slots.map((s,i)=>{const b=document.createElement('button');b.textContent=`${String(i+1).padStart(2,'0')} · ${s?.name||'Empty'}`;b.className=i===selected?'active':'';b.setAttribute('aria-pressed',String(i===selected));b.onclick=()=>{stopPreview();selected=i;update();};b.disabled=busy;return b;}));
  $('deviceControls').disabled=busy||!connected();
@@ -75,9 +75,19 @@ $('preview').onclick=async()=>{
 };
 
 function download(bytes,name){const url=URL.createObjectURL(new Blob([bytes],{type:'application/octet-stream'})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);}
-$('backup').onclick=()=>{try{download(encodeBank(slots),'Ash-Sample-bank.ashs');log('Bank backup downloaded.');}catch(e){log(e.message,true);}};
+$('backup').onclick=guard(async()=>{await readBank();download(encodeBank(slots),'Ash-Sample-bank.ashs');log('Bank backup downloaded.');});
 $('restore').onclick=()=>$('bankFile').click();
-$('bankFile').onchange=guard(async()=>{stopPreview();const file=$('bankFile').files[0];if(file){slots=decodeBank(new Uint8Array(await file.arrayBuffer()));log('Backup loaded into editor. Use SEND SLOT for each slot to install on Ash.');}$('bankFile').value='';});
+$('bankFile').onchange=guard(async()=>{
+ stopPreview();const file=$('bankFile').files[0];
+ try{
+  if(!file)return;
+  if(!connected())throw Error('Connect to Ash before opening a backup.');
+  if(!singleSlotSupported)throw Error('Install the latest Ash Sample firmware and reconnect to restore a backup.');
+  const backup=decodeBank(new Uint8Array(await file.arrayBuffer()));
+  for(let slot=0;slot<backup.length;slot++)await transferSlot(slot,backup[slot]);
+  log('Backup restored to all eight slots on Ash and in the editor.');
+ }finally{$('bankFile').value='';}
+});
 function progress(value,max){$('progress').hidden=false;$('progress').max=max;$('progress').value=value;}
 async function transferSlot(slot,sample){
  if(!singleSlotSupported)throw Error('Install the latest Ash Sample firmware and reconnect to update device slots.');
@@ -98,21 +108,23 @@ $('send').onclick=guard(async()=>{
  if(!sample)throw Error('Choose a sample before sending this slot.');
  await transferSlot(slot,sample);
 });
-$('read').onclick=guard(async()=>{
+async function readBank(){
+ if(!connected())throw Error('Connect to Ash before reading or downloading a backup.');
  stopPreview();log('Reading sample bank…');
  const first=unpack((await request(10,number7(0))).data);if(first.length!==256)throw Error('Invalid bank response');
  const length=new DataView(first.buffer).getUint32(8,true);if(length<HEADER||length>CAPACITY)throw Error('Invalid bank length');
  const bank=new Uint8Array(length);bank.set(first);
  for(let offset=256;offset<length;offset+=256){const part=unpack((await request(10,number7(offset))).data);if(part.length!==Math.min(256,length-offset))throw Error('Incomplete bank response');bank.set(part,offset);progress(offset+part.length,length);}
  slots=decodeBank(bank);log('Sample bank loaded from device.');
-});
+}
+$('read').onclick=guard(readBank);
 function settingsPayload(){const values=[0,+$('balance').value,+$('brightness').value];if(![0,1].includes(values[0])||values.slice(1).some(v=>!Number.isInteger(v)||v<0||v>127))throw Error('Balance and brightness must be whole numbers from 0 to 127.');return values;}
 const applySettings=guard(async()=>{settings(await request(2,settingsPayload()));log('Device settings updated.');});
-$('saveSettings').onclick=guard(async()=>{await request(2,settingsPayload());await request(3);log('Settings stored on the device');});
+$('saveSettings').onclick=guard(async()=>{await request(2,settingsPayload());await request(3);log('Settings stored on the device.');});
 for(const id of ['balance','brightness']){updateSlider(id);$(id).oninput=()=>updateSlider(id);$(id).onchange=()=>{if(connected())return applySettings();};}
 
 update();
 
-log('Press Connect to device to connect Ascetik Ash Sample.');
+log('Click Connect to Ash-Sample to get started.');
 
 })();

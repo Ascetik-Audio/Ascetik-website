@@ -16,7 +16,8 @@ button, input, select { touch-action: manipulation; }
 input:focus-visible { outline: 2px solid var(--white); outline-offset: 3px; }
 @media (max-width: 550px) { .sample-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-.playback-modes { margin: 16px 0; }
+.playback-modes { margin: 16px 0; align-items: center; flex-wrap: nowrap; }
+#playbackModeLabel { white-space: nowrap; }
 .playback-modes button[aria-pressed="true"] { background: var(--white); color: var(--black); }
 .playback-modes button:disabled { background: var(--black); color: var(--gray); }
 

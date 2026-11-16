@@ -75,5 +75,5 @@ function draw(name,table) {
 const previewResize=new ResizeObserver(()=>['A','B'].forEach((name,id)=>draw(name,tables[id])));
 for(const name of ['A','B']) previewResize.observe($(`preview${name}`));
 controls();
-status('Press Connect to device to connect Ascetik Ash Wave.');
+status('Click Connect to Ash-Wave to get started.');
 })();
