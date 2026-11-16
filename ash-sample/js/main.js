@@ -35,7 +35,7 @@ if(typeof ResizeObserver!=='undefined')new ResizeObserver(draw).observe($('wave'
 function guard(fn){return async()=>{if(busy)return;busy=true;update();try{await fn();}catch(e){log(e.message,true);}finally{busy=false;$('progress').hidden=true;update();}};}
 function request(cmd,payload=[]){return connection.send(cmd,payload);}
 function updateSlider(id){const slider=$(id);slider.style.setProperty('--range-fill',`${Number(slider.value)/127*100}%`);$(`${id}Val`).textContent=slider.value;}
-function settings(r){if(r.data?.length>=4)singleSlotSupported=r.data.length>=5&&!!(r.data[4]&1);$('mode').value=r.mode;$('balance').value=r.balance;$('brightness').value=r.brightness;for(const id of ['balance','brightness'])updateSlider(id);}
+function settings(r){if(r.data?.length>=4)singleSlotSupported=r.data.length>=5&&!!(r.data[4]&1);$('balance').value=r.balance;$('brightness').value=r.brightness;for(const id of ['balance','brightness'])updateSlider(id);}
 const connection=new globalThis.AshMidiConnection.Connection({onStatus:log,onSettings:settings,onConnection:()=>update()});
 $('connect').onclick=guard(()=>connection.retry());
 $('choose').onclick=()=>$('file').click();
@@ -106,11 +106,11 @@ $('read').onclick=guard(async()=>{
  for(let offset=256;offset<length;offset+=256){const part=unpack((await request(10,number7(offset))).data);if(part.length!==Math.min(256,length-offset))throw Error('Incomplete bank response');bank.set(part,offset);progress(offset+part.length,length);}
  slots=decodeBank(bank);log('Sample bank loaded from device.');
 });
-function settingsPayload(){const values=[+$('mode').value,+$('balance').value,+$('brightness').value];if(![0,1].includes(values[0])||values.slice(1).some(v=>!Number.isInteger(v)||v<0||v>127))throw Error('Balance and brightness must be whole numbers from 0 to 127.');return values;}
+function settingsPayload(){const values=[0,+$('balance').value,+$('brightness').value];if(![0,1].includes(values[0])||values.slice(1).some(v=>!Number.isInteger(v)||v<0||v>127))throw Error('Balance and brightness must be whole numbers from 0 to 127.');return values;}
 const applySettings=guard(async()=>{settings(await request(2,settingsPayload()));log('Device settings updated.');});
 $('saveSettings').onclick=guard(async()=>{await request(2,settingsPayload());await request(3);log('Settings stored on the device');});
 for(const id of ['balance','brightness']){updateSlider(id);$(id).oninput=()=>updateSlider(id);$(id).onchange=()=>{if(connected())return applySettings();};}
-$('mode').onchange=()=>{if(connected())return applySettings();};
+
 update();
 
 log('Press Connect to device to connect Ascetik Ash Sample.');

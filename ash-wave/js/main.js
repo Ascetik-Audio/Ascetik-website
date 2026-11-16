@@ -14,7 +14,7 @@ function updateSlider(id) {
  $(`${id}Val`).textContent=slider.value;
 }
 function settings(s) {
- $('audioMode').value=s.mode;$('balance').value=s.balance;$('brightness').value=s.brightness;
+ $('balance').value=s.balance;$('brightness').value=s.brightness;
  for(const id of ['balance','brightness']) updateSlider(id);
 }
 const connection=new globalThis.AshMidiConnection.Connection({
@@ -28,15 +28,15 @@ for(const id of ['balance','brightness']) {
  updateSlider(id);
  $(id).addEventListener('input',()=>updateSlider(id));
 }
-for(const id of ['audioMode','balance','brightness']) $(id).addEventListener('change',()=>{
+for(const id of ['balance','brightness']) $(id).addEventListener('change',()=>{
  if(!connected) return;
  return run(async()=>{
- const reply=await connection.send(P.commands.set,[Number($('audioMode').value),Number($('balance').value),Number($('brightness').value)]);
+ const reply=await connection.send(P.commands.set,[0,Number($('balance').value),Number($('brightness').value)]);
  settings(reply);status('Device settings updated.');
  });
 });
 $('connect').addEventListener('click',()=>run(()=>connection.retry()));
-$('store').addEventListener('click',()=>run(async()=>{await connection.send(P.commands.save);status('Both device tables, brightness, USB audio routing and balance stored to EEPROM.');}));
+$('store').addEventListener('click',()=>run(async()=>{await connection.send(P.commands.save);status('Both device tables, brightness, USB audio balance stored to EEPROM.');}));
 function draw(name,table) {
  const canvas=$(`preview${name}`),ctx=canvas.getContext('2d');
  const width=canvas.clientWidth,height=canvas.clientHeight,scale=window.devicePixelRatio||1;
