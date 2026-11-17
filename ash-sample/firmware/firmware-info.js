@@ -1,1 +1,1 @@
-window.ASH_FIRMWARE = {"file": "Ash-Sample-v16-11-26.53.uf2", "version": "16-11-26.53", "date": "2026-11-16", "sha256": "032311096b5ccbf82b56f2572cd489fb6f5c6aeb5008d081f9e9859bf8773c15"};
+window.ASH_FIRMWARE = {"file": "Ash-Sample-v17-11-26.56.uf2", "version": "17-11-26.56", "date": "2026-11-17", "sha256": "032311096b5ccbf82b56f2572cd489fb6f5c6aeb5008d081f9e9859bf8773c15"};
