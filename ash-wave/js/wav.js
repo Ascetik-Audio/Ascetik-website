@@ -24,7 +24,7 @@ function decode(buffer) {
  if(!format||!data) throw Error('WAV format or audio data is missing.');
  const {type,channels,rate,align,bits}=format;
  if(![1,3].includes(type)||!Number.isInteger(channels)||channels<1||channels>8||rate<1||!(type===1?[8,16,24,32]:[32,64]).includes(bits)||align!==channels*bits/8||data.size%align) throw Error('Use PCM 8/16/24/32-bit or float 32/64-bit WAV.');
- const frames=data.size/align;if(frames<2||frames>1048576) throw Error('Choose a single waveform cycle containing 2–1048576 samples.');
+ const frames=data.size/align;if(frames<2||frames>1048576) throw Error('Choose one waveform cycle (2–1048576 samples).');
  const samples=new Float64Array(frames);let mean=0;
  for(let i=0;i<frames;i++) {
    let sum=0;for(let c=0;c<channels;c++) {
@@ -50,7 +50,7 @@ function decode(buffer) {
    }
    converted[i]=value/weight;peak=Math.max(peak,Math.abs(converted[i]));
  }
- if(peak<1e-10) throw Error('The WAV cycle is silent after removing DC.');
+ if(peak<1e-10) throw Error('No usable waveform in this WAV.');
  return Int16Array.from(converted,v=>Math.max(-32768,Math.min(32767,Math.round(v/peak*32767))));
 }
 globalThis.AshWaveWav={decode};

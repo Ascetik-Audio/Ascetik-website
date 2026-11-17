@@ -42,10 +42,10 @@ $('choose').onclick=()=>$('file').click();
 $('file').onchange=guard(async()=>{
  const file=$('file').files[0];if(!file)return;stopPreview();
  context??=new AudioContext();const decoded=await context.decodeAudioData(await file.arrayBuffer());
- const frames=Math.round(decoded.duration*24000);if(frames<2||frames*2>CAPACITY-HEADER) throw Error('Sample is too long or too short. Trim it in an audio editor first.');
+ const frames=Math.round(decoded.duration*24000);if(frames<2||frames*2>CAPACITY-HEADER) throw Error('Invalid sample length. Choose another file.');
  const offline=new OfflineAudioContext(1,frames,24000),node=offline.createBufferSource();node.buffer=decoded;node.connect(offline.destination);node.start();
  const rendered=await offline.startRendering(),data=rendered.getChannelData(0),pcm=normalizePCM(data);
- const candidate=slots.slice();candidate[selected]={name:file.name.replace(/\.wav$/i,''),pcm,loopStart:0,loopEnd:pcm.length};encodeBank(candidate);slots=candidate;log(`Slot ${String(selected+1).padStart(2,'0')} converted and normalized. Send this slot to update the device.`);$('file').value='';
+ const candidate=slots.slice();candidate[selected]={name:file.name.replace(/\.wav$/i,''),pcm,loopStart:0,loopEnd:pcm.length};encodeBank(candidate);slots=candidate;log(`Slot ${String(selected+1).padStart(2,'0')} ready to send.`);$('file').value='';
 });
 function setPlaybackMode(oneShot){stopPreview();const s=slots[selected];if(!s)return;if(oneShot)s.oneShot=true;else delete s.oneShot;update();}
 $('modeLoop').onclick=()=>setPlaybackMode(false);
@@ -54,7 +54,7 @@ $('remove').onclick=guard(async()=>{
  stopPreview();const slot=selected;
  if(connected())await transferSlot(slot,null);
  slots[slot]=null;
- log(`Slot ${String(slot+1).padStart(2,'0')} cleared${connected()?' on Ash and in the editor':' in the editor'}.`);
+ log(`Slot ${String(slot+1).padStart(2,'0')} cleared${connected()?' on Ash':' in editor'}.`);
 });
 function stopPreview(){
  if(!source)return;
@@ -81,16 +81,16 @@ $('bankFile').onchange=guard(async()=>{
  stopPreview();const file=$('bankFile').files[0];
  try{
   if(!file)return;
-  if(!connected())throw Error('Connect to Ash before opening a backup.');
-  if(!singleSlotSupported)throw Error('Install the latest Ash Sample firmware and reconnect to restore a backup.');
+  if(!connected())throw Error('Connect Ash to restore a backup.');
+  if(!singleSlotSupported)throw Error('Update firmware, then reconnect to restore.');
   const backup=decodeBank(new Uint8Array(await file.arrayBuffer()));
   for(let slot=0;slot<backup.length;slot++)await transferSlot(slot,backup[slot]);
-  log('Backup restored to all eight slots on Ash and in the editor.');
+  log('Backup restored to Ash.');
  }finally{$('bankFile').value='';}
 });
 function progress(value,max){$('progress').hidden=false;$('progress').max=max;$('progress').value=value;}
 async function transferSlot(slot,sample){
- if(!singleSlotSupported)throw Error('Install the latest Ash Sample firmware and reconnect to update device slots.');
+ if(!singleSlotSupported)throw Error('Update firmware, then reconnect to send samples.');
  const normalized=sample?{...sample,pcm:normalizePCM(Float32Array.from(sample.pcm,x=>x/32768))}:null;
  const single=Array(8).fill(null);single[slot]=normalized;
  const bank=encodeBank(single),pcm=bank.subarray(HEADER),entry=bank.subarray(32+slot*40,72+slot*40);
@@ -99,32 +99,32 @@ async function transferSlot(slot,sample){
  try{
   await request(12,[slot,normalized?.oneShot?1:0,...pack(entry),...number7(crc32(pcm),5)]);begun=true;
   for(let offset=0;offset<pcm.length;offset+=256){await request(13,[...number7(offset),...pack(pcm.subarray(offset,offset+256))]);progress(Math.min(pcm.length,offset+256),pcm.length);}
-  await request(14);slots[slot]=normalized;log(`Slot ${String(slot+1).padStart(2,'0')} updated. Other device slots unchanged.`);
+  await request(14);slots[slot]=normalized;log(`Slot ${String(slot+1).padStart(2,'0')} updated.`);
  }catch(e){if(begun){try{await request(11);}catch{}}throw e;}
 }
 $('send').onclick=guard(async()=>{
  stopPreview();
  const slot=selected,sample=slots[slot];
- if(!sample)throw Error('Choose a sample before sending this slot.');
+ if(!sample)throw Error('Choose a sample first.');
  await transferSlot(slot,sample);
 });
 async function readBank(){
- if(!connected())throw Error('Connect to Ash before reading or downloading a backup.');
+ if(!connected())throw Error('Connect Ash to read the sample bank.');
  stopPreview();log('Reading sample bank…');
  const first=unpack((await request(10,number7(0))).data);if(first.length!==256)throw Error('Invalid bank response');
  const length=new DataView(first.buffer).getUint32(8,true);if(length<HEADER||length>CAPACITY)throw Error('Invalid bank length');
  const bank=new Uint8Array(length);bank.set(first);
  for(let offset=256;offset<length;offset+=256){const part=unpack((await request(10,number7(offset))).data);if(part.length!==Math.min(256,length-offset))throw Error('Incomplete bank response');bank.set(part,offset);progress(offset+part.length,length);}
- slots=decodeBank(bank);log('Sample bank loaded from device.');
+ slots=decodeBank(bank);log('Sample bank loaded.');
 }
 $('read').onclick=guard(readBank);
-function settingsPayload(){const values=[0,+$('balance').value,+$('brightness').value];if(![0,1].includes(values[0])||values.slice(1).some(v=>!Number.isInteger(v)||v<0||v>127))throw Error('Balance and brightness must be whole numbers from 0 to 127.');return values;}
-const applySettings=guard(async()=>{settings(await request(2,settingsPayload()));log('Device settings updated.');});
-$('saveSettings').onclick=guard(async()=>{await request(2,settingsPayload());await request(3);log('Settings stored on the device.');});
+function settingsPayload(){const values=[0,+$('balance').value,+$('brightness').value];if(![0,1].includes(values[0])||values.slice(1).some(v=>!Number.isInteger(v)||v<0||v>127))throw Error('Balance and brightness must be 0–127.');return values;}
+const applySettings=guard(async()=>{settings(await request(2,settingsPayload()));log('Settings updated.');});
+$('saveSettings').onclick=guard(async()=>{await request(2,settingsPayload());await request(3);log('Settings saved to Ash.');});
 for(const id of ['balance','brightness']){updateSlider(id);$(id).oninput=()=>updateSlider(id);$(id).onchange=()=>{if(connected())return applySettings();};}
 
 update();
 
-log('Click Connect to Ash-Sample to get started.');
+
 
 })();

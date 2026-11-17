@@ -38,7 +38,7 @@
   }
   function changed() {
     ++revision;
-    if(!connection.ready) {status('Settings changed locally — connect Ash to configure the device');return;}
+    if(!connection.ready) {status('Changes kept in editor. Connect Ash to apply.');return;}
     clearTimeout(timer);timer=setTimeout(()=>{void flush().catch(e=>status(e.message,true));},80);
   }
   function flush() {
@@ -71,7 +71,7 @@
     field.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();field.blur();}});
   });
   store.addEventListener('click',()=>void action(async()=>{
-    settings=collect();++revision;await flush();await connection.send(commands.save);status('Settings stored on the device');
+    settings=collect();++revision;await flush();await connection.send(commands.save);status('Settings saved to Ash.');
   }));
   save.addEventListener('click',()=>{
     try {
@@ -79,7 +79,7 @@
       const blob=new Blob([JSON.stringify(preset(name,collect()),null,2)+'\n'],{type:'application/json'});
       const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;
       link.download=name.replace(/[^a-z0-9_-]/gi,'-')+'.json';document.body.append(link);link.click();link.remove();
-      setTimeout(()=>URL.revokeObjectURL(url),1000);status('Device settings saved to file');
+      setTimeout(()=>URL.revokeObjectURL(url),1000);status('Settings file downloaded.');
     }catch(e){status(e.message,true);}
   });
   const file=byId('presetFile');load.addEventListener('click',()=>file.click());
@@ -88,8 +88,8 @@
       const selected=file.files?.[0];if(!selected)return;if(selected.size>65536)throw Error('Preset file is too large');
       const imported=importPreset(await selected.text());settings=imported.settings;byId('presetName').value=imported.name;
       ++revision;render();
-      if(connection.ready) {await flush();status('JSON loaded and sent to device');}else status('JSON loaded locally');
+      if(connection.ready) {await flush();status('Preset applied to Ash.');}else status('Preset loaded in editor.');
     }finally{file.value='';}
   }));
-  render();status('Click Connect to Ash-MIDI to get started.');
+  render();
 })();

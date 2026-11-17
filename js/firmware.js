@@ -9,7 +9,7 @@
   const button = document.createElement('button'); button.type = 'button'; button.textContent = 'INSTALL';
   let status = document.getElementById('monitorLog');
   if (!status) {
-    status = document.createElement('div'); status.id = 'monitorLog'; status.className = 'monitor-log';
+    status = document.createElement('div'); status.id = 'monitorLog'; status.className = 'monitor-log'; status.textContent = 'Connect Ash to update firmware.';
     const section = document.createElement('div'); section.id = 'monitorSection';
     section.append(status);
     document.querySelector('.device-header').append(section);
@@ -21,19 +21,19 @@
   actions.append(button);
   row.append(version, actions); host.append(row, progress);
   if (!manifest || !/^[A-Za-z0-9.-]+\.uf2$/.test(manifest.file) || !/^[a-f0-9]{64}$/.test(manifest.sha256 || '')) {
-    status.textContent = 'Latest firmware unavailable. Reload the page to retry.'; button.disabled = true; return;
+    button.title = 'Firmware unavailable. Reload to retry.'; button.disabled = true; return;
   }
   version.textContent = `${manifest.file}`;
   const download = document.createElement('a');
   download.className = 'firmware-download'; download.textContent = 'DOWNLOAD';
   download.href = `firmware/${manifest.file}`; download.download = manifest.file;
   download.addEventListener('click', () => {
-    status.textContent = `To install ${manifest.file}: disconnect Ash from USB. Hold BOOTSEL on the Pico while reconnecting USB, then release it. Copy the downloaded UF2 file to the RPI-RP2 drive. Ash will restart automatically when copying finishes.`;
+    status.textContent = `Hold BOOTSEL while reconnecting USB. Release it, then copy ${manifest.file} to RPI-RP2.`;
   });
   actions.append(download);
   if (!window.isSecureContext || !navigator.usb || !navigator.serial) {
     button.disabled = true;
-    status.textContent = 'Automatic flashing requires desktop Chrome or Edge with USB and serial access (HTTPS or localhost).';
+    button.title = 'Use desktop Chrome or Edge to install, or download firmware.';
     return;
   }
   const bootFilter = { vendorId: 0x2e8a, productId: 0x0003 };
@@ -51,11 +51,11 @@
           const bytes = Uint8Array.from(atob(encoded), c => c.charCodeAt(0));
           const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
           if (Array.from(digest, b => b.toString(16).padStart(2, '0')).join('') !== manifest.sha256)
-            throw Error('Firmware files are out of date. Reload the editor.');
+            throw Error('Firmware out of date. Reload to retry.');
           resolve(window.AshPicoBoot.parseUF2(bytes.buffer));
         } catch (e) { reject(e); }
       };
-      script.onerror = () => reject(Error('Firmware image could not be loaded. Reload the editor.'));
+      script.onerror = () => reject(Error('Firmware unavailable. Reload to retry.'));
       document.head.append(script);
     });
     return imagePromise;
@@ -66,7 +66,7 @@
     .then(([, devices, ports]) => {
       if (!devices.some(isBoot) && !ports.some(isAsh)) stage = 'serial';
       button.disabled = false;
-    }).catch(e => { status.textContent = e.message; });
+    }).catch(e => { button.title = e.message; });
   async function grantedBoot() { return (await navigator.usb.getDevices()).filter(isBoot); }
   async function waitBoot() {
     for (let i = 0; i < 40; i++) {
@@ -80,7 +80,7 @@
   function needsBootPermission() {
     stage = 'boot';
     button.textContent = 'ALLOW USB & FLASH';
-    status.textContent = 'Ash is ready. Press ALLOW USB & FLASH and select RP2 Boot in the browser permission prompt.';
+    status.textContent = 'Click ALLOW USB & FLASH, then select RP2 Boot.';
   }
   button.addEventListener('click', async () => {
     if (busy) return;
@@ -99,13 +99,13 @@
           else {
             // getPorts() consumed the gesture on some browsers: use another click.
             stage = 'serial'; button.textContent = 'SELECT ASH & FLASH';
-            status.textContent = 'Press SELECT ASH & FLASH to allow access to your connected Ash.';
+            status.textContent = 'Click SELECT ASH & FLASH, then select Ash.';
             return;
           }
         }
       }
       if (!boot) {
-        status.textContent = 'Restarting Ash in update mode…';
+        status.textContent = 'Entering update mode…';
         await port.open({ baudRate: 1200 });
         await port.setSignals({ dataTerminalReady: true });
         try { await port.setSignals({ dataTerminalReady: false }); }
@@ -116,23 +116,23 @@
         if (!boot) { needsBootPermission(); return; }
       }
       const sectors = await image();
-      status.textContent = 'Installing firmware. Keep Ash connected…';
+      status.textContent = 'Installing… Keep Ash connected.';
       progress.hidden = false; progress.value = 0;
       flasher = new window.AshPicoBoot.PicoBoot(boot);
       await flasher.open();
       await flasher.flash(sectors, (done, total) => {
         progress.value = Math.round(done * 100 / total);
-        status.textContent = `Installing and verifying firmware… ${progress.value}%`;
+        status.textContent = `Installing… ${progress.value}%`;
       });
       stage = 'start'; button.textContent = 'INSTALL';
-      status.textContent = `${manifest.file} verified. Ash is restarting.`;
+      status.textContent = `Firmware installed. Restarting Ash…`;
     } catch (error) {
       if (error.name === 'NotFoundError') {
         button.textContent = stage === 'serial' ? 'SELECT ASH & FLASH' : 'CONNECT BOOTLOADER';
-        status.textContent = 'Device selection cancelled. Press the button to try again.';
+        status.textContent = 'Selection cancelled. Click to retry.';
       } else {
         stage = 'boot'; button.textContent = 'CONNECT BOOTLOADER';
-        status.textContent = `${error.message} If Ash is in update mode, press the installation button to reconnect and retry.`;
+        status.textContent = `${error.message} Click to reconnect.`;
       }
       if (boot) { stage = 'boot'; button.textContent = 'RECONNECT & FLASH'; }
     } finally {

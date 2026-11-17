@@ -32,11 +32,11 @@ for(const id of ['balance','brightness']) $(id).addEventListener('change',()=>{
  if(!connected) return;
  return run(async()=>{
  const reply=await connection.send(P.commands.set,[0,Number($('balance').value),Number($('brightness').value)]);
- settings(reply);status('Device settings updated.');
+ settings(reply);status('Settings updated.');
  });
 });
 $('connect').addEventListener('click',()=>run(()=>connection.retry()));
-$('store').addEventListener('click',()=>run(async()=>{await connection.send(P.commands.save);status('Both device tables, brightness, USB audio balance stored to EEPROM.');}));
+$('store').addEventListener('click',()=>run(async()=>{await connection.send(P.commands.save);status('Tables and settings saved to Ash.');}));
 function draw(name,table) {
  const canvas=$(`preview${name}`),ctx=canvas.getContext('2d');
  const width=canvas.clientWidth,height=canvas.clientHeight,scale=window.devicePixelRatio||1;
@@ -57,7 +57,7 @@ function draw(name,table) {
    try {
      if(file.size>64*1024*1024) throw Error('Choose a WAV file smaller than 64 MB.');
      const table=W.decode(await file.arrayBuffer());if(generation!==loaded[id]) return;
-     tables[id]=table;draw(name,table);$(`name${name}`).textContent=file.name;status(`Table ${name} converted. Send it to update the device.`);
+     tables[id]=table;draw(name,table);$(`name${name}`).textContent=file.name;status(`Table ${name} ready to send.`);
    }catch(e) {if(generation===loaded[id]) {$(`name${name}`).textContent='Conversion failed.';status(e.message,true);}}
    controls();
  });
@@ -68,12 +68,12 @@ function draw(name,table) {
      status(`Sending table ${name}…`);await connection.send(P.commands.beginTable,[id]);
      for(let offset=0;offset<1024;offset+=64) {await connection.send(P.commands.tableChunk,P.chunk(table,id,offset));$('transferProgress').value=offset+64;}
      await connection.send(P.commands.commitTable,P.commit(table,id));
-     $(`name${name}`).textContent=$(`file${name}`).files[0].name;status(`Table ${name} updated. Use Store to EEPROM to keep it after power-off.`);
+     $(`name${name}`).textContent=$(`file${name}`).files[0].name;status(`Table ${name} sent. Store to EEPROM to keep it.`);
    }finally {$('transferProgress').hidden=true;}
  }));
 });
 const previewResize=new ResizeObserver(()=>['A','B'].forEach((name,id)=>draw(name,tables[id])));
 for(const name of ['A','B']) previewResize.observe($(`preview${name}`));
 controls();
-status('Click Connect to Ash-Wave to get started.');
+
 })();

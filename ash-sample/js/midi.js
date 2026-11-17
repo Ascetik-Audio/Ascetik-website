@@ -32,12 +32,12 @@
     }
     async start() {
       if(!this.navigator?.requestMIDIAccess) {
-        this.status('WebMIDI not supported — use a compatible browser',true);this.handlers.onPermission?.(false);return;
+        this.status('MIDI unavailable. Use Chrome or Edge.',true);this.handlers.onPermission?.(false);return;
       }
       if(this.starting) return;
       this.starting=true;
       try {
-        this.status('Looking for Ascetik Ash Sample…');
+        this.status('Looking for Ash…');
         if(!this.access) this.access=await this.navigator.requestMIDIAccess({sysex:true});
         this.handlers.onPermission?.(true);
         this.access.onstatechange=()=>{
@@ -51,7 +51,7 @@
         };
         await this.refresh();
       } catch(e) {
-        this.status(e.message||'MIDI access denied or SysEx blocked',true);this.handlers.onPermission?.(false);
+        this.status(e.message||'MIDI access blocked. Allow access and retry.',true);this.handlers.onPermission?.(false);
       } finally {this.starting=false;}
     }
     async refresh() {
@@ -69,19 +69,19 @@
       // Detach synchronously: hotplug callbacks cannot reuse a stale output.
       this.input=pair?.input||null;this.output=pair?.output||null;this.notify();
       if(!pair) {
-        this.status(this.failed.size?'Ash found, but no Ash Sample protocol reply — check firmware or retry':'No Ascetik Ash Sample connected',this.failed.size>0);
+        this.status(this.failed.size?'Ash not responding. Update firmware or retry.':'Ash not connected.',this.failed.size>0);
         if(this.failed.size) this.handlers.onPermission?.(false);
         return;
       }
       const epoch=this.epoch;
-      this.syncing=true;this.notify();this.status('Checking Ash Sample and loading device state…');
+      this.syncing=true;this.notify();this.status('Loading settings…');
       try {
         this.input.onmidimessage=event=>{if(epoch===this.epoch) this.receive(event);};
         await this.input.open();await this.output.open();
         if(epoch!==this.epoch||this.input.state!=='connected'||this.output.state!=='connected') throw Error('Ash disconnected.');
         const settings=await this.send(commands.get);
         if(epoch!==this.epoch) return;
-        this.ready=true;this.handlers.onSettings?.(settings);this.status('Connected to Ascetik Ash Sample');
+        this.ready=true;this.handlers.onSettings?.(settings);this.status('Ash connected.');
       } catch(e) {
         this.failed.add(pairKey(pair.input,pair.output));
         this.input.onmidimessage=null;this.input=this.output=null;this.ready=false;
@@ -91,10 +91,10 @@
     send(command,payload=[]) {
       const epoch=this.epoch;
       const job=this.chain.then(()=>{
-        if(epoch!==this.epoch||!this.input||!this.output||this.input.state!=='connected'||this.output.state!=='connected') throw Error('No Ascetik Ash Sample connected');
+        if(epoch!==this.epoch||!this.input||!this.output||this.input.state!=='connected'||this.output.state!=='connected') throw Error('Ash not connected.');
         this.sequence=(this.sequence+1)%128;
         return new Promise((resolve,reject)=>{
-          const timer=setTimeout(()=>{this.pending=null;reject(Error('Device state request timed out — reconnect or retry'));},2500);
+          const timer=setTimeout(()=>{this.pending=null;reject(Error('Ash timed out. Reconnect and retry.'));},2500);
           this.pending={command,sequence:this.sequence,resolve,reject,timer};
           try {this.output.send(request(command,this.sequence,payload));}
           catch(e) {clearTimeout(timer);this.pending=null;reject(e);}
@@ -107,7 +107,7 @@
       try {reply=response(event.data||[]);}catch {return;}
       if(!reply||!this.pending||reply.command!==this.pending.command||reply.sequence!==this.pending.sequence) return;
       const p=this.pending;this.pending=null;clearTimeout(p.timer);
-      if(reply.status) p.reject(Error(['','Device rejected the request','Device is busy — finish or restart the sample bank transfer','Not enough free flash space, or the write failed'][reply.status]||'Device error'));
+      if(reply.status) p.reject(Error(['','Request rejected.','Ash is busy. Finish or retry the transfer.','Could not save. Check free space and retry.'][reply.status]||'Device error'));
       else p.resolve(reply.settings);
     }
     async retry() {

@@ -21,10 +21,10 @@
       const flags = v.getUint32(8, true), address = v.getUint32(12, true);
       const size = v.getUint32(16, true), number = v.getUint32(20, true);
       if (flags !== 0x2000 || v.getUint32(28, true) !== 0xe48bff56)
-        throw Error('Firmware is not a supported RP2040 flash image');
+        throw Error('Unsupported firmware file.');
       if (size !== 256 || address % 256 || address < BASE || address + size > END ||
           v.getUint32(24, true) !== count || number >= count || numbers.has(number) || pages.has(address))
-        throw Error('Invalid UF2 address or block sequence');
+        throw Error('Invalid firmware file.');
       numbers.add(number);
       pages.set(address, bytes.slice(offset + 32, offset + 288));
     }
@@ -46,7 +46,7 @@
       const iface = this.device.configuration.interfaces.find(i => i.alternates.some(a =>
         a.interfaceClass === 255 && a.endpoints.some(e => e.type === 'bulk' && e.direction === 'in') &&
         a.endpoints.some(e => e.type === 'bulk' && e.direction === 'out')));
-      if (!iface) throw Error('PICOBOOT interface not found');
+      if (!iface) throw Error('Update mode not found.');
       const alt = iface.alternates.find(a => a.interfaceClass === 255 &&
         a.endpoints.some(e => e.type === 'bulk' && e.direction === 'in') &&
         a.endpoints.some(e => e.type === 'bulk' && e.direction === 'out'));
@@ -58,7 +58,7 @@
       this.output = alt.endpoints.find(e => e.type === 'bulk' && e.direction === 'out').endpointNumber;
       const reset = await this.device.controlTransferOut({ requestType: 'vendor', recipient: 'interface',
         request: 0x41, value: 0, index: this.iface });
-      if (reset.status !== 'ok') throw Error('Could not initialize PICOBOOT');
+      if (reset.status !== 'ok') throw Error('Could not start update mode.');
     }
     async out(data) {
       const result = await deadline(this.device.transferOut(this.output, data));
@@ -85,7 +85,7 @@
       if (status.status !== 'ok' || !status.data || status.data.byteLength !== 16 ||
           status.data.getUint32(0, true) !== this.token || status.data.getUint32(4, true) !== 0 ||
           status.data.getUint8(8) !== id || status.data.getUint8(9) !== 0)
-        throw Error('Bootloader rejected firmware command');
+        throw Error('Firmware update rejected.');
       return read;
     }
     range(address, length) {

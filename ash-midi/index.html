@@ -17,32 +17,24 @@
         <header class="device-header">
             <a href="../" aria-label="Ascetik home"><img class="logo" src="../img/ascetik.png" alt="Ascetik Monitor"></a>
         <div id="monitorSection">
-            <div id="monitorLog" class="monitor-log" role="status" aria-live="polite">Click Connect to Ash-MIDI to get started.</div>
+            <div id="monitorLog" class="monitor-log" role="status" aria-live="polite">Connect Ash to manage MIDI settings.</div>
         </div>
         </header>
         <div class="settings-layout">
             <div id="settingsSection">
-                <p class="device-intro">===<br>Ascetik Ash MIDI is a MIDI controller and stereo USB audio interface. Map your controls, manage presets, and configure your device here.<br><br>Browser support: use desktop Chrome or Edge and allow MIDI access, including SysEx.<br><br>Storing to EEPROM during audio playback may cause a brief noise.<br><br><span id="connectDescription">Connect via MIDI to read and edit your device settings. Allow MIDI access when prompted.</span><br><br><button id="connect" type="button" aria-describedby="connectDescription">Connect to Ash-MIDI</button><br>===</p>
+                <div class="device-intro">
+<p>===</p>
+<h3>Ash MIDI</h3>
+<p>A MIDI controller and stereo USB audio interface. Map your controls, manage presets, and configure your device here.</p>
+<h3>Browser support</h3>
+<p>Use desktop Chrome or Edge and allow MIDI access, including SysEx.</p>
+<h3>Saving settings</h3>
+<p>Storing to EEPROM during audio playback may cause a brief noise.</p>
+<button id="connect" type="button">Connect to Ash-MIDI</button>
+<p>===</p>
+</div>
 <div class="firmware-update"><h2>Latest firmware</h2></div>
-                <section class="editor-section" aria-labelledby="deviceSettingsTitle">
-                <h2 id="deviceSettingsTitle">Device Settings</h2>
 
-                <div class="slider-wrap velocity-control">
-                    <div class="slider-meta"><label class="slider-name" for="vel">Velocity:</label><output class="slider-value" id="velVal" for="vel">127</output></div>
-                    <input id="vel" type="range" min="27" max="127" value="127">
-                </div>
-                <div class="slider-wrap">
-                    <div class="slider-meta"><label class="slider-name" for="midiChannel">MIDI Channel:</label><output class="slider-value" id="midiChannelVal" for="midiChannel">1</output></div>
-                    <input id="midiChannel" type="range" min="1" max="16" value="1">
-                </div>
-                <div class="slider-wrap">
-                    <label class="select-row select-row-stack"><span>Device Mode</span><select id="deviceMode"><option value="0">Keyboard</option><option value="1">MIDI Controller</option></select></label>
-                </div>
-                <div class="slider-wrap">
-                    <div class="slider-meta"><label class="slider-name" for="brightness">Brightness:</label><output class="slider-value" id="brightnessVal" for="brightness">32</output></div>
-                    <input id="brightness" type="range" min="0" max="127" value="32">
-                </div>
-                </section>
                 <section class="editor-section cc-grid-wrap" aria-labelledby="midiMappingTitle">
                     <h2 id="midiMappingTitle" class="cc-grid-title">MIDI Mapping</h2>
                     <h3 class="cc-group-title">Potentiometers CC</h3>
@@ -84,7 +76,26 @@
                     </div>
                     <input id="presetFile" type="file" accept=".json,application/json" hidden>
                 </section>
-                <section class="editor-section" aria-labelledby="storageTitle">
+                <section class="editor-section" aria-labelledby="deviceSettingsTitle">
+                <h2 id="deviceSettingsTitle">Device Settings</h2>
+
+                <div class="slider-wrap velocity-control">
+                    <div class="slider-meta"><label class="slider-name" for="vel">Velocity:</label><output class="slider-value" id="velVal" for="vel">127</output></div>
+                    <input id="vel" type="range" min="27" max="127" value="127">
+                </div>
+                <div class="slider-wrap">
+                    <div class="slider-meta"><label class="slider-name" for="midiChannel">MIDI Channel:</label><output class="slider-value" id="midiChannelVal" for="midiChannel">1</output></div>
+                    <input id="midiChannel" type="range" min="1" max="16" value="1">
+                </div>
+                <div class="slider-wrap">
+                    <label class="select-row select-row-stack"><span>Device Mode</span><select id="deviceMode"><option value="0">Keyboard</option><option value="1">MIDI Controller</option></select></label>
+                </div>
+                <div class="slider-wrap">
+                    <div class="slider-meta"><label class="slider-name" for="brightness">Brightness:</label><output class="slider-value" id="brightnessVal" for="brightness">32</output></div>
+                    <input id="brightness" type="range" min="0" max="127" value="32">
+                </div>
+                </section>
+<section class="editor-section" aria-labelledby="storageTitle">
                     <h2 id="storageTitle">Save Settings to Device</h2>
                     <div class="preset-row">
                         <button id="storePreset" disabled>Store to EEPROM</button>

@@ -5,7 +5,7 @@ function crc32(bytes) {let c=0xffffffff;for(const x of bytes){c^=x;for(let i=0;i
 function encodeBank(slots) {
  if(slots.length!==SLOTS)throw Error(`Bank must contain ${SLOTS} slots.`);
  const size=HEADER+slots.reduce((n,s)=>n+(s?.pcm.length||0)*2,0);
- if(size>CAPACITY) throw Error('Bank exceeds device storage. Use shorter files or remove samples.');
+ if(size>CAPACITY) throw Error('Bank is full. Shorten or remove samples.');
  const bytes=new Uint8Array(size),v=new DataView(bytes.buffer);bytes.set([65,83,72,83]);v.setUint32(4,2,true);v.setUint32(8,size,true);
  let offset=HEADER;
  slots.forEach((s,i)=>{if(!s) return;if(s.pcm.length<2) throw Error('Samples need at least two frames.');
@@ -22,7 +22,7 @@ function decodeBank(bytes) {
  const v=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
  if(v.getUint32(0,true)!==0x53485341||![1,2].includes(v.getUint32(4,true))||v.getUint32(8,true)!==bytes.length||crc32(bytes.subarray(HEADER))!==v.getUint32(12,true)) throw Error('Invalid bank or checksum');
  // Refuse to silently discard populated upper slots from older 16-slot banks.
- for(let i=SLOTS;i<16;i++)if(v.getUint32(32+i*40+4,true))throw Error('This bank uses slots 9–16. Move those samples into slots 1–8 with the previous editor first.');
+ for(let i=SLOTS;i<16;i++)if(v.getUint32(32+i*40+4,true))throw Error('Move slots 9–16 to 1–8 in the previous editor first.');
  return Array.from({length:SLOTS},(_,i)=>{const e=32+i*40,o=v.getUint32(e,true),n=v.getUint32(e+4,true),a=v.getUint32(e+8,true),b=v.getUint32(e+12,true);
   const mode=v.getUint32(4,true)===2?bytes[16+i]:0;if(mode>1)throw Error('Invalid playback mode');
   if(!n) return null;

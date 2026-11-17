@@ -142,29 +142,29 @@ input[type="range"] {
   width: var(--panel-width);
   height: 18px;
   appearance: none;
-  border: 2px solid var(--white);
+  border: 2px solid var(--range-color, var(--white));
   padding: 0;
 }
 input[type="range"]::-webkit-slider-runnable-track {
   height: 18px;
-  background: linear-gradient(to right, var(--white) var(--range-fill), var(--black) var(--range-fill));
+  background: linear-gradient(to right, var(--range-color, var(--white)) var(--range-fill), var(--black) var(--range-fill));
 }
 input[type="range"]::-moz-range-track {
   height: 18px;
-  background: linear-gradient(to right, var(--white) var(--range-fill), var(--black) var(--range-fill));
+  background: linear-gradient(to right, var(--range-color, var(--white)) var(--range-fill), var(--black) var(--range-fill));
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 12px;
   height: 18px;
-  background: var(--white);
-  border: 2px solid var(--white);
+  background: var(--range-color, var(--white));
+  border: 2px solid var(--range-color, var(--white));
   margin-top: 0;
 }
 input[type="range"]::-moz-range-thumb {
   width: 12px;
   height: 18px;
-  background: var(--white);
+  background: var(--range-color, var(--white));
   border: 2px solid var(--gray);
 }
 
@@ -305,3 +305,18 @@ progress::-moz-progress-bar { background: var(--white); border-radius: 0; }
 @media (max-width: 400px) {
   .ash-layout { grid-template-columns: 80px minmax(0, 1fr); gap: 16px; }
 }
+
+/* Shared selector state, matching Ash-Sample slots. */
+.preset-row button[aria-pressed="true"] { background: var(--white); color: var(--black); }
+.preset-row button[aria-pressed="true"]:disabled { background: var(--black); color: var(--gray); }
+
+/* Disabled controls share the same gray state as disabled buttons.
+   :disabled also matches inputs inside disabled fieldsets. */
+input:disabled, select:disabled, textarea:disabled {
+  opacity: 1;
+  color: var(--gray);
+  border-color: var(--gray);
+  background: var(--black);
+}
+fieldset:disabled, .slider-wrap:has(input:disabled) { color: var(--gray); }
+input[type="range"]:disabled { --range-color: var(--gray); }

@@ -12,7 +12,7 @@ function validate(value) {
         throw Error('Settings must be an object.');
     const s = value;
     if (!integer(s.mode, 0, 1) || !integer(s.channel, 1, 16) || !integer(s.velocity, 1, 127) || !integer(s.brightness===undefined?32:s.brightness,0,127) || !Array.isArray(s.cc) || s.cc.length !== 22 || !s.cc.every(n => integer(n, 0, 127)))
-        throw Error('Invalid settings: check mode, channel, velocity and all 22 CC numbers.');
+        throw Error('Invalid settings. Check the values.');
     return { mode: s.mode, channel: s.channel, velocity: s.velocity, brightness:s.brightness===undefined?32:s.brightness, cc: [...s.cc] };
 }
 function encode(s) { s = validate(s); return [s.mode, s.channel, s.velocity, ...s.cc, s.brightness]; }
@@ -36,7 +36,7 @@ function preset(name, settings) { return { format: 'ascetik-ash-midi', version: 
 function importPreset(text) {
     const p = JSON.parse(text);
     if (p?.format !== 'ascetik-ash-midi' || p.version !== 1 || typeof p.name !== 'string' || p.name.length > 64)
-        throw Error('This is not a supported Ash MIDI preset.');
+        throw Error('Unsupported preset file.');
     return { name: p.name, settings: validate(p.settings) };
 }
 
