@@ -1,1 +1,1 @@
-window.ASH_FIRMWARE = {"file": "Ash-Pulse-v18-11-26.20.uf2", "version": "18-11-26.20", "date": "2026-11-18", "sha256": "c263f6fe259bafe7dc65cd1f97578bda5c0cade95ad5bd2c106db4b0edcfe137"};
+window.ASH_FIRMWARE = {"file": "Ash-Pulse-v18-11-26.25.uf2", "version": "18-11-26.25", "date": "2026-11-18", "sha256": "153d4376f9cd8f914bbdb01600ac5fecb61e6a8a542cef06e4cc8ea11b51d631"};
