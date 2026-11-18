@@ -3,6 +3,8 @@
  const P=AshPulse,$=id=>document.getElementById(id);
  let raw=P.defaults(),kit=0,voice=0,samples=ASH_PULSE_DEFAULTS.map(s=>({...s,pcm:Int16Array.from(s.pcm)}));
  let context;
+ let clockSource=0,clockOutput=0,clockReady=false;
+ let midiMappings=[{note:36,channel:10},{note:38,channel:10},{note:42,channel:10}],midiReady=false;
  let port,reader,writer,connected=false,deviceBusy=false,line='',pendingWrite=Promise.resolve();
  const active=new Map();
  function status(message,error=false){$('monitorLog').textContent=message;$('monitorLog').classList.toggle('error',error);}
@@ -39,9 +41,9 @@
  $('audition').onclick=async()=>{try{await audio();sound(voice,context.currentTime,P.decode(raw).pitch);}catch(e){fail(e);}};
  $('clear').onclick=()=>{samples[kit*3+voice]=null;renderSamples();};
  function download(name,text,type){const url=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
- $('backup').onclick=()=>download('ash-pulse.ashs',JSON.stringify({format:'ash-pulse-1',raw,kit,samples:samples.map(s=>s?{...s,pcm:Array.from(s.pcm)}:null)}),'application/json');
+ $('backup').onclick=()=>download('ash-pulse.ashs',JSON.stringify({format:'ash-pulse-1',raw,kit,midi:midiMappings,clock:{source:clockSource,output:clockOutput},samples:samples.map(s=>s?{...s,pcm:Array.from(s.pcm)}:null)}),'application/json');
  $('restore').onclick=()=>$('backupFile').click();
- $('backupFile').onchange=async()=>{const file=$('backupFile').files[0];$('backupFile').value='';if(!file)return;try{if(file.size>10000000)throw Error('Backup too large.');const restored=P.validState(JSON.parse(await file.text()));({raw,kit,samples}=restored);renderSamples();queueDevice();status('Backup restored.');}catch(e){fail(e);}};
+ $('backupFile').onchange=async()=>{const file=$('backupFile').files[0];$('backupFile').value='';if(!file)return;try{if(file.size>10000000)throw Error('Backup too large.');const restored=P.validState(JSON.parse(await file.text()));({raw,kit,samples}=restored);renderSamples();queueDevice();if(restored.midi){midiMappings=restored.midi;renderMidi();if(midiReady)sendMidi().catch(fail);}if(restored.clock){clockSource=restored.clock.source;clockOutput=restored.clock.output;renderClock();if(clockReady)sendClock().catch(fail);}status('Backup restored.');}catch(e){fail(e);}};
  let sendTimer;
  function queueDevice(){if(!connected)return;clearTimeout(sendTimer);sendTimer=setTimeout(()=>write('P '+raw.join(' ')+' '+kit+'\n').catch(fail),40);}
  function write(text){pendingWrite=pendingWrite.catch(()=>{}).then(async()=>{if(!writer)throw Error('Ash disconnected.');await writer.write(new TextEncoder().encode(text));});return pendingWrite;}
@@ -49,18 +51,43 @@
   const input=$(id);$(id+'Val').textContent=input.value;
   input.style.setProperty('--range-fill',Number(input.value)*100/127+'%');
  }
- function settingsEnabled(on) {$('deviceControls').disabled=!on;$('saveSettings').disabled=!on;}
+ function renderMidi() {midiMappings.forEach((m,d)=>{for(const key of ['note','channel'])$('midi'+d+key).value=m[key];});}
+ function readMidi() {
+  return P.validMidi(midiMappings.map((_,d)=>{const m={};for(const key of ['note','channel']){const value=String($('midi'+d+key).value);m[key]=value.trim()===''?NaN:Number(value);}return m;}));
+ }
+ async function sendMidi() {if(!midiReady)return;midiMappings=readMidi();await write('M '+midiMappings.flatMap(m=>[m.note,m.channel]).join(' ')+'\n');}
+ for(let d=0;d<3;d++) {
+  const block=document.createElement('div');block.className='table-block';const title=document.createElement('h3');title.textContent='Drum '+(d+1);block.append(title);
+  const row=document.createElement('div');row.className='preset-row';
+  for(const key of ['note','channel']) {
+   const label=document.createElement('label');label.className='select-row';label.textContent=key==='note'?'Note:':'Channel:';
+   const input=document.createElement('input');input.type='number';input.className='cc-field';input.id='midi'+d+key;input.min=key==='note'?0:1;input.max=key==='note'?127:16;input.step=1;input.setAttribute('aria-label','Drum '+(d+1)+' MIDI '+key);
+   input.onchange=async()=>{try{await sendMidi();}catch(e){fail(e);renderMidi();}};label.append(input);row.append(label);
+  }
+  block.append(row);$('midiMappings').append(block);
+ }
+ renderMidi();
+ function renderClock() {$('clockSource').value=clockSource;$('clockOutput').value=clockOutput;}
+ function readClock() {return P.validClock({source:Number($('clockSource').value),output:Number($('clockOutput').value)});}
+ async function sendClock() {if(!clockReady)return;const c=readClock();clockSource=c.source;clockOutput=c.output;await write('C '+clockSource+' '+clockOutput+'\n');}
+ for(const id of ['clockSource','clockOutput'])$(id).onchange=async()=>{try{await sendClock();}catch(e){fail(e);renderClock();}};
+ renderClock();
+ function settingsEnabled(on) {$('deviceControls').disabled=!on;$('saveSettings').disabled=!on;if(!on){midiReady=false;clockReady=false;$('midiControls').disabled=true;$('clockControls').disabled=true;}}
  for(const [id,value] of [['balance',64],['brightness',32]]) {
   $(id).value=value;updateSlider(id);
   $(id).oninput=()=>updateSlider(id);
   $(id).onchange=()=>{if(connected)write('S '+$('balance').value+' '+$('brightness').value+'\n').catch(fail);};
  }
  settingsEnabled(false);
- $('saveSettings').onclick=async()=>{if(!connected)return;try{await write('S '+$('balance').value+' '+$('brightness').value+'\n');await write('W\n');}catch(e){fail(e);}};
+ $('saveSettings').onclick=async()=>{if(!connected)return;try{if(midiReady)readMidi();if(clockReady)readClock();await write('S '+$('balance').value+' '+$('brightness').value+'\n');await sendMidi();await sendClock();await write('W\n');}catch(e){fail(e);}};
  function receive(text){line+=text;if(line.length>4096){line='';throw Error('Invalid serial response.');}let i;while((i=line.indexOf('\n'))>=0){const message=line.slice(0,i).trim();line=line.slice(i+1);const parts=message.split(' ');if(parts[0]==='PULSE'&&parts.length===16){const values=parts.slice(1).map(Number);if(!values.every(Number.isInteger)||values.slice(0,13).some(v=>v<0||v>4095)||values[13]<0||values[13]>3||![0,1].includes(values[14]))continue;raw=values.slice(0,13);kit=values[13];renderSamples();if(!connected){connected=true;clearTimeout(handshake);$('connect').textContent='DISCONNECT';status('Ash Pulse connected. Kit selection follows the device.');}}
   else if(parts[0]==='SETTINGS'&&parts.length===3) {
    const values=parts.slice(1).map(Number);
    if(connected&&values.every(v=>Number.isInteger(v)&&v>=0&&v<=127)) {['balance','brightness'].forEach((id,i)=>{$(id).value=values[i];updateSlider(id);});settingsEnabled(true);}
+  } else if(parts[0]==='MIDI'&&parts.length===7&&connected) {
+   try {const v=parts.slice(1).map(Number);midiMappings=P.validMidi([0,1,2].map(d=>({note:v[d*2],channel:v[d*2+1]})));midiReady=true;$('midiControls').disabled=false;renderMidi();}catch(e){fail(e);}
+  } else if(parts[0]==='CLOCK'&&parts.length===4&&connected) {
+   try{const v=parts.slice(1).map(Number),c=P.validClock({source:v[0],output:v[1]});if(!Number.isInteger(v[2])||v[2]<0||v[2]>2||(v[2]!==0&&v[2]!==c.source))throw Error('Invalid active clock source.');clockSource=c.source;clockOutput=c.output;clockReady=true;$('clockControls').disabled=false;renderClock();$('clockStatus').textContent=v[2]?'Clock: '+(v[2]===1?'USB':'TRS'):clockSource?'Clock: Internal (waiting for '+(clockSource===1?'USB':'TRS')+')':'Clock: Internal';}catch(e){fail(e);}
   } else if(message==='SAVED')status('Settings saved to Ash.');
   else if(message.startsWith('ERR'))status(message,true);
  }}
