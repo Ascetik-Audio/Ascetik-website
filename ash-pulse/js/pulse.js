@@ -6,7 +6,7 @@
  const bin=(raw,n)=>Math.floor(raw*n/4096);
  function decode(raw) {
   const rhythm=(l,e,o)=>{const length=1+bin(raw[l],16),requestedEvents=bin(raw[e],17);return {length,requestedEvents,events:Math.min(requestedEvents,length),offset:bin(raw[o],length)};};
-  return {drums:[rhythm(0,2,7),rhythm(0,4,9),rhythm(1,6,12),rhythm(1,3,8)],bpm:40+Math.floor(raw[5]*200/4095),divider:1+bin(raw[11],8),warmth:raw[10]};
+  return {drums:[rhythm(0,2,7),rhythm(0,4,9),rhythm(1,6,12),rhythm(1,3,8)],bpm:40+Math.floor(raw[5]*200/4095),divider:4-bin(raw[11],4),warmth:raw[10]};
  }
  // Same Q12 warmth transfer as Ash-Sample and the firmware.
  function applyWarmth(x,amount) {
@@ -19,7 +19,7 @@
   const clipped=driven<0?-magnitude:magnitude;
   return x+(((clipped-x)*amount)>>12);
  }
- function defaults() {return [4095,4095,1024,512,512,1638,1024,0,0,0,0,0,0];}
+ function defaults() {return [4095,4095,1024,512,512,1638,1024,0,0,0,0,3072,0];}
  const headerBytes=4096,bankBytes=1204224;
  function checksum(bytes) {let c=0xffffffff;for(const byte of bytes){c^=byte;for(let bit=0;bit<8;bit++)c=(c>>>1)^((c&1)?0xedb88320:0);}return (c^0xffffffff)>>>0;}
  function bankFile(samples) {
