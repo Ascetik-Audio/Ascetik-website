@@ -5,7 +5,7 @@
  const hit=(step,length,events,offset)=>length>0&&events>0&&(((step+length-offset%length)%length)*events)%length<events;
  const bin=(raw,n)=>Math.floor(raw*n/4096);
  function decode(raw) {
-  const rhythm=(l,e,o)=>{const length=1+bin(raw[l],16);return {length,events:bin(raw[e],length+1),offset:bin(raw[o],length)};};
+  const rhythm=(l,e,o)=>{const length=1+bin(raw[l],16),requestedEvents=bin(raw[e],17);return {length,requestedEvents,events:Math.min(requestedEvents,length),offset:bin(raw[o],length)};};
   return {drums:[rhythm(0,2,7),rhythm(0,4,9),rhythm(1,6,12),rhythm(1,3,8)],bpm:40+Math.floor(raw[5]*200/4095),divider:1+bin(raw[11],8),warmth:raw[10]};
  }
  // Same Q12 warmth transfer as Ash-Sample and the firmware.
