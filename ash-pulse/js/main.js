@@ -6,15 +6,16 @@
  let clockSource=0,clockOutput=0,clockReady=false;
  let midiMappings=[{note:36,channel:10},{note:38,channel:10},{note:42,channel:10}],midiReady=false;
  let port,reader,writer,connected=false,deviceBusy=false,line='',pendingWrite=Promise.resolve();
+ let bankReady=false,kitReady=false,bankStored=false,bankLength=0,bankCapacity=0,bankBusy=false,pendingBank=null;
  const active=new Map();
  function status(message,error=false){$('monitorLog').textContent=message;$('monitorLog').classList.toggle('error',error);}
  function fail(e){status(e.message||String(e),true);}
  async function audio(){if(!context) context=new AudioContext();await context.resume();return context;}
- function buffer(s){const b=context.createBuffer(1,s.pcm.length,s.rate);const v=b.getChannelData(0);for(let i=0;i<v.length;i++) v[i]=s.pcm[i]/32768;return b;}
- function sound(d,time,pitch){
+ function buffer(s,warmth){const b=context.createBuffer(1,s.pcm.length,s.rate);const v=b.getChannelData(0);for(let i=0;i<v.length;i++) v[i]=warmth?P.applyWarmth(s.pcm[i]>>3,warmth)/4096:s.pcm[i]/32768;return b;}
+ function sound(d,time,warmth){
   const sample=samples[kit*3+d];if(!sample) return;
   const previous=active.get(d);if(previous){previous.gain.gain.cancelScheduledValues(time);previous.gain.gain.setValueAtTime(.3,time);previous.gain.gain.linearRampToValueAtTime(0,time+.001);try{previous.source.stop(time+.001);}catch(_){}}
-  const source=context.createBufferSource(),gain=context.createGain();source.buffer=buffer(sample);source.playbackRate.value=pitch;
+  const source=context.createBufferSource(),gain=context.createGain();source.buffer=buffer(sample,warmth);
   gain.gain.setValueAtTime(0,time);gain.gain.linearRampToValueAtTime(.3,time+.001);source.connect(gain).connect(context.destination);source.start(time);
   const item={source,gain};active.set(d,item);source.onended=()=>{source.disconnect();gain.disconnect();if(active.get(d)===item) active.delete(d);};
  }
@@ -26,6 +27,7 @@
   const bytes=samples.reduce((n,s)=>n+(s?s.pcm.length*2:0),0);$('space').value=bytes;$('usage').textContent=`Storage: ${(bytes/1000).toFixed(1)} / 1200 KB used`;
   const canvas=$('wave'),c=canvas.getContext('2d');c.clearRect(0,0,canvas.width,canvas.height);c.strokeStyle='#808080';c.beginPath();c.moveTo(0,120);c.lineTo(1000,120);c.stroke();
   if(s){c.strokeStyle='#fff';c.beginPath();for(let x=0;x<1000;x++){const a=Math.floor(x*s.pcm.length/1000),b=Math.max(a+1,Math.floor((x+1)*s.pcm.length/1000));let lo=0,hi=0;for(let i=a;i<b&&i<s.pcm.length;i++){lo=Math.min(lo,s.pcm[i]);hi=Math.max(hi,s.pcm[i]);}c.moveTo(x,120+lo*110/32768);c.lineTo(x,120+hi*110/32768);}c.stroke();}
+  bankButtons();
  }
  $('choose').onclick=()=>$('file').click();
  $('file').onchange=async()=>{const file=$('file').files[0],index=kit*3+voice;$('file').value='';if(!file)return;try{
@@ -38,15 +40,84 @@
   const bytes=samples.reduce((n,s,i)=>n+(s&&i!==index?s.pcm.length*2:0),pcm.length*2);if(bytes>1200000)throw Error('Sample bank exceeds 1.2 MB. Clear or shorten another sample.');
   samples[index]={name:file.name.slice(0,256),rate:24000,pcm};renderSamples();status('WAV loaded.');
  }catch(e){fail(e);}};
- $('audition').onclick=async()=>{try{await audio();sound(voice,context.currentTime,P.decode(raw).pitch);}catch(e){fail(e);}};
+ $('audition').onclick=async()=>{try{await audio();sound(voice,context.currentTime,P.decode(raw).warmth);}catch(e){fail(e);}};
  $('clear').onclick=()=>{samples[kit*3+voice]=null;renderSamples();};
  function download(name,text,type){const url=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
  $('backup').onclick=()=>download('ash-pulse.ashs',JSON.stringify({format:'ash-pulse-1',raw,kit,midi:midiMappings,clock:{source:clockSource,output:clockOutput},samples:samples.map(s=>s?{...s,pcm:Array.from(s.pcm)}:null)}),'application/json');
  $('restore').onclick=()=>$('backupFile').click();
  $('backupFile').onchange=async()=>{const file=$('backupFile').files[0];$('backupFile').value='';if(!file)return;try{if(file.size>10000000)throw Error('Backup too large.');const restored=P.validState(JSON.parse(await file.text()));({raw,kit,samples}=restored);renderSamples();queueDevice();if(restored.midi){midiMappings=restored.midi;renderMidi();if(midiReady)sendMidi().catch(fail);}if(restored.clock){clockSource=restored.clock.source;clockOutput=restored.clock.output;renderClock();if(clockReady)sendClock().catch(fail);}status('Backup restored.');}catch(e){fail(e);}};
  let sendTimer;
- function queueDevice(){if(!connected)return;clearTimeout(sendTimer);sendTimer=setTimeout(()=>write('P '+raw.join(' ')+' '+kit+'\n').catch(fail),40);}
+ function queueDevice(){if(!connected||bankBusy)return;clearTimeout(sendTimer);sendTimer=setTimeout(()=>write('P '+raw.join(' ')+' '+kit+'\n').catch(fail),40);}
  function write(text){pendingWrite=pendingWrite.catch(()=>{}).then(async()=>{if(!writer)throw Error('Ash disconnected.');await writer.write(new TextEncoder().encode(text));});return pendingWrite;}
+ function bankButtons() {
+  $('sendBank').disabled=!connected||!kitReady||bankBusy;
+  $('readBank').disabled=!connected||!bankReady||!bankStored||bankBusy;
+  for(const id of ['choose','backup','restore'])$(id).disabled=bankBusy;
+  $('clear').disabled=bankBusy||!samples[kit*3+voice];
+  for(const id of ['kits','voices'])for(const button of $(id).children)button.disabled=bankBusy;
+ }
+ function rejectBank(error) {if(pendingBank){const pending=pendingBank;pendingBank=null;clearTimeout(pending.timer);pending.reject(error);}}
+ function bankRequest(command,prefix) {
+  return new Promise((resolve,reject)=>{
+   if(pendingBank){reject(Error('Sample transfer already waiting for Ash.'));return;}
+   const pending={prefix,resolve,reject};pendingBank=pending;
+   pending.timer=setTimeout(()=>{if(pendingBank===pending)rejectBank(Error('Sample transfer timed out. Reconnect and send the bank again.'));},15000);
+   write(command+'\n').catch(error=>{if(pendingBank===pending)rejectBank(error);});
+  });
+ }
+ function bankMessage(message) {
+  if(message.startsWith('BANK INFO ')) {
+   const v=message.slice(10).split(' ').map(Number);
+   if((v.length===3||v.length===4)&&v.every(Number.isInteger)&&v[0]===P.bankBytes&&[0,1].includes(v[1])&&
+      ((v[1]||(v.length===4&&v[3]===1))?(v[2]>=P.headerBytes&&v[2]<=v[0]&&v[2]%2===0):v[2]===0)){
+    bankReady=true;kitReady=v.length===4&&v[3]===1;bankCapacity=v[0];bankStored=!!v[1]||kitReady;bankLength=v[2];bankButtons();
+   }
+  } else if(pendingBank) {
+   if(pendingBank.prefix.endsWith(' ')?!message.startsWith(pendingBank.prefix):message!==pendingBank.prefix){rejectBank(Error('Unexpected sample transfer response. Reconnect before retrying.'));return;}
+   const pending=pendingBank;pendingBank=null;clearTimeout(pending.timer);pending.resolve(message.slice(pending.prefix.length));
+  }
+ }
+ function transferUI(busy) {
+  bankBusy=busy;clearTimeout(sendTimer);bankButtons();
+  $('deviceControls').disabled=busy||!connected;$('saveSettings').disabled=busy||!connected;
+  $('transferProgress').hidden=!busy;if(busy)$('transferProgress').value=0;
+ }
+ const toHex=bytes=>Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+ function fromHex(hex) {if(!/^(?:[0-9a-fA-F]{2})+$/.test(hex))throw Error('Invalid bank data from Ash.');return Uint8Array.from(hex.match(/../g),v=>parseInt(v,16));}
+ $('sendBank').onclick=async()=>{
+  if(!connected||!kitReady||bankBusy)return;
+  let begun=false;
+  try{
+   const selectedKit=kit,selected=Array(12).fill(null);
+   for(let drum=0;drum<3;drum++)selected[selectedKit*3+drum]=samples[selectedKit*3+drum];
+   const bytes=P.bankFile(selected);if(bytes.length>bankCapacity)throw Error('Kit exceeds device storage.');
+   transferUI(true);status('Stopping playback and sending Kit '+(selectedKit+1)+'…');
+   // Mark the attempt before Begin: a lost reply can still mean flash changed.
+   begun=true;await bankRequest('K '+selectedKit+' '+bytes.length+' '+P.checksum(bytes.subarray(P.headerBytes)),'BANK KIT BEGIN');
+   for(let offset=0;offset<bytes.length;offset+=256){const chunk=bytes.subarray(offset,offset+256);
+    await bankRequest('D '+offset+' '+toHex(chunk),'BANK DATA '+(offset+chunk.length));
+    $('transferProgress').value=(offset+chunk.length)/bytes.length;
+    status('Sending Kit '+(selectedKit+1)+': '+Math.round((offset+chunk.length)*100/bytes.length)+'%');
+   }
+   const total=Number(await bankRequest('E','BANK KIT DONE '));
+   if(!Number.isInteger(total)||total<P.headerBytes||total>bankCapacity||total%2)throw Error('Invalid bank length from Ash.');
+   begun=false;bankStored=true;bankLength=total;
+   status('Kit '+(selectedKit+1)+' saved to Ash. Other kits unchanged. Touch Play to start.');
+  }catch(error){if(begun&&writer&&connected)await bankRequest('A','BANK ABORT').catch(()=>{});fail(error);}
+  finally{transferUI(false);}
+ };
+ $('readBank').onclick=async()=>{
+  if(!connected||!bankReady||!bankStored||bankBusy)return;
+  try{
+   transferUI(true);const bytes=new Uint8Array(bankLength);
+   for(let offset=0;offset<bytes.length;offset+=256){const chunk=fromHex(await bankRequest('R '+offset,'BANK READ '+offset+' '));
+    if(chunk.length!==Math.min(256,bytes.length-offset))throw Error('Incomplete sample bank read.');
+    bytes.set(chunk,offset);$('transferProgress').value=Math.min(offset+256,bytes.length)/bytes.length;
+    status('Reading samples: '+Math.round($('transferProgress').value*100)+'%');
+   }
+   samples=P.readBank(bytes);renderSamples();status('Sample bank read from Ash. Download a backup to keep a copy.');
+  }catch(error){fail(error);}finally{transferUI(false);}
+ };
  function updateSlider(id) {
   const input=$(id);$(id+'Val').textContent=input.value;
   input.style.setProperty('--range-fill',Number(input.value)*100/127+'%');
@@ -72,7 +143,7 @@
  async function sendClock() {if(!clockReady)return;const c=readClock();clockSource=c.source;clockOutput=c.output;await write('C '+clockSource+' '+clockOutput+'\n');}
  for(const id of ['clockSource','clockOutput'])$(id).onchange=async()=>{try{await sendClock();}catch(e){fail(e);renderClock();}};
  renderClock();
- function settingsEnabled(on) {$('deviceControls').disabled=!on;$('saveSettings').disabled=!on;if(!on){midiReady=false;clockReady=false;$('midiControls').disabled=true;$('clockControls').disabled=true;}}
+ function settingsEnabled(on) {$('deviceControls').disabled=!on||bankBusy;$('saveSettings').disabled=!on||bankBusy;if(!on){bankReady=false;kitReady=false;bankStored=false;midiReady=false;clockReady=false;$('midiControls').disabled=true;$('clockControls').disabled=true;}bankButtons();}
  for(const [id,value] of [['balance',64],['brightness',32]]) {
   $(id).value=value;updateSlider(id);
   $(id).oninput=()=>updateSlider(id);
@@ -80,7 +151,7 @@
  }
  settingsEnabled(false);
  $('saveSettings').onclick=async()=>{if(!connected)return;try{if(midiReady)readMidi();if(clockReady)readClock();await write('S '+$('balance').value+' '+$('brightness').value+'\n');await sendMidi();await sendClock();await write('W\n');}catch(e){fail(e);}};
- function receive(text){line+=text;if(line.length>4096){line='';throw Error('Invalid serial response.');}let i;while((i=line.indexOf('\n'))>=0){const message=line.slice(0,i).trim();line=line.slice(i+1);const parts=message.split(' ');if(parts[0]==='PULSE'&&parts.length===16){const values=parts.slice(1).map(Number);if(!values.every(Number.isInteger)||values.slice(0,13).some(v=>v<0||v>4095)||values[13]<0||values[13]>3||![0,1].includes(values[14]))continue;raw=values.slice(0,13);kit=values[13];renderSamples();if(!connected){connected=true;clearTimeout(handshake);$('connect').textContent='DISCONNECT';status('Ash Pulse connected. Kit selection follows the device.');}}
+ function receive(text){line+=text;if(line.length>4096){line='';throw Error('Invalid serial response.');}let i;while((i=line.indexOf('\n'))>=0){const message=line.slice(0,i).trim();line=line.slice(i+1);const parts=message.split(' ');if(parts[0]==='BANK'){bankMessage(message);continue;}if(parts[0]==='PULSE'&&parts.length===16){const values=parts.slice(1).map(Number);if(!values.every(Number.isInteger)||values.slice(0,13).some(v=>v<0||v>4095)||values[13]<0||values[13]>3||![0,1].includes(values[14]))continue;raw=values.slice(0,13);kit=values[13];renderSamples();if(!connected){connected=true;clearTimeout(handshake);$('connect').textContent='DISCONNECT';status('Ash Pulse connected. Kit selection follows the device.');}}
   else if(parts[0]==='SETTINGS'&&parts.length===3) {
    const values=parts.slice(1).map(Number);
    if(connected&&values.every(v=>Number.isInteger(v)&&v>=0&&v<=127)) {['balance','brightness'].forEach((id,i)=>{$(id).value=values[i];updateSlider(id);});settingsEnabled(true);}
@@ -89,10 +160,10 @@
   } else if(parts[0]==='CLOCK'&&parts.length===4&&connected) {
    try{const v=parts.slice(1).map(Number),c=P.validClock({source:v[0],output:v[1]});if(!Number.isInteger(v[2])||v[2]<0||v[2]>2||(v[2]!==0&&v[2]!==c.source))throw Error('Invalid active clock source.');clockSource=c.source;clockOutput=c.output;clockReady=true;$('clockControls').disabled=false;renderClock();$('clockStatus').textContent=v[2]?'Clock: '+(v[2]===1?'USB':'TRS'):clockSource?'Clock: Internal (waiting for '+(clockSource===1?'USB':'TRS')+')':'Clock: Internal';}catch(e){fail(e);}
   } else if(message==='SAVED')status('Settings saved to Ash.');
-  else if(message.startsWith('ERR'))status(message,true);
+  else if(message.startsWith('ERR')){rejectBank(Error(message));status(message,true);}
  }}
  let handshake;
- async function disconnect(){clearTimeout(handshake);clearTimeout(sendTimer);connected=false;settingsEnabled(false);$('connect').textContent='CONNECT TO ASH-PULSE';if(reader)await reader.cancel().catch(()=>{});}
+ async function disconnect(){clearTimeout(handshake);clearTimeout(sendTimer);rejectBank(Error('Ash disconnected during transfer. Reconnect and send the bank again.'));connected=false;settingsEnabled(false);$('connect').textContent='CONNECT TO ASH-PULSE';if(reader)await reader.cancel().catch(()=>{});}
  $('connect').onclick=async()=>{
   if(port){await disconnect();return;}if(deviceBusy)return;
   if(!navigator.serial){status('Use desktop Chrome or Edge to connect and manage Ash.');return;}
@@ -102,7 +173,7 @@
    $('connect').disabled=false;
    const decoder=new TextDecoder();while(true){const {value,done}=await reader.read();if(done)break;receive(decoder.decode(value,{stream:true}));}
   }catch(e){if(e.name!=='NotFoundError')fail(e);else status('Connection cancelled.');}
-  finally{clearTimeout(handshake);connected=false;settingsEnabled(false);if(reader){reader.releaseLock();reader=null;}if(writer){await pendingWrite.catch(()=>{});writer.releaseLock();writer=null;}if(port){await port.close().catch(()=>{});port=null;}deviceBusy=false;$('connect').disabled=false;$('connect').textContent='CONNECT TO ASH-PULSE';}
+  finally{clearTimeout(handshake);rejectBank(Error('Ash disconnected during transfer. Reconnect and send the bank again.'));connected=false;settingsEnabled(false);if(reader){reader.releaseLock();reader=null;}if(writer){await pendingWrite.catch(()=>{});writer.releaseLock();writer=null;}if(port){await port.close().catch(()=>{});port=null;}deviceBusy=false;$('connect').disabled=false;$('connect').textContent='CONNECT TO ASH-PULSE';}
  };
  renderSamples();
 })();
