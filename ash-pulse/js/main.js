@@ -95,13 +95,14 @@
  async function disconnect(){clearTimeout(handshake);clearTimeout(sendTimer);connected=false;settingsEnabled(false);$('connect').textContent='CONNECT TO ASH-PULSE';if(reader)await reader.cancel().catch(()=>{});}
  $('connect').onclick=async()=>{
   if(port){await disconnect();return;}if(deviceBusy)return;
+  if(!navigator.serial){status('Use desktop Chrome or Edge to connect and manage Ash.');return;}
+  if(!isSecureContext){status('Open this page over HTTPS or localhost to connect to Ash.');return;}
   deviceBusy=true;$('connect').disabled=true;
   try{port=await navigator.serial.requestPort({filters:[{usbVendorId:0x2e8a,usbProductId:0x000a}]});await port.open({baudRate:115200});writer=port.writable.getWriter();reader=port.readable.getReader();line='';await write('Q\n');status('Checking Ash Pulse firmware…');handshake=setTimeout(()=>{status('No Pulse response. Install Ash Pulse firmware, then reconnect.',true);disconnect();},3000);
    $('connect').disabled=false;
    const decoder=new TextDecoder();while(true){const {value,done}=await reader.read();if(done)break;receive(decoder.decode(value,{stream:true}));}
   }catch(e){if(e.name!=='NotFoundError')fail(e);else status('Connection cancelled.');}
-  finally{clearTimeout(handshake);connected=false;settingsEnabled(false);if(reader){reader.releaseLock();reader=null;}if(writer){await pendingWrite.catch(()=>{});writer.releaseLock();writer=null;}if(port){await port.close().catch(()=>{});port=null;}deviceBusy=false;$('connect').disabled=!navigator.serial;$('connect').textContent='CONNECT TO ASH-PULSE';}
+  finally{clearTimeout(handshake);connected=false;settingsEnabled(false);if(reader){reader.releaseLock();reader=null;}if(writer){await pendingWrite.catch(()=>{});writer.releaseLock();writer=null;}if(port){await port.close().catch(()=>{});port=null;}deviceBusy=false;$('connect').disabled=false;$('connect').textContent='CONNECT TO ASH-PULSE';}
  };
- if(!navigator.serial||!isSecureContext){$('connect').disabled=true;$('connect').title='Use desktop Chrome or Edge over HTTPS or localhost to connect.';}
  renderSamples();
 })();
